@@ -18,8 +18,10 @@ spec:
           from: All
       tls:
         mode: Terminate
+        {{- if .Values.gateway.certificateName }}
         certificateRefs:
-          - name: {{ .Values.gateway.certificateName | default "syncthing-tls" }}
+          - name: {{ .Values.gateway.certificateName }}
+        {{- end }}
     - name: syncthing-tcp
       port: {{ .Values.service.syncTcpPort }}
       protocol: TCP

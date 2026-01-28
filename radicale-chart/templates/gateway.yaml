@@ -19,6 +19,8 @@ spec:
           from: All
       tls:
         mode: Terminate
+        {{- if .Values.gateway.certificateName }}
         certificateRefs:
-          - name: {{ .Values.gateway.certificateName | default "radicale-tls" }}
+          - name: {{ .Values.gateway.certificateName }}
+        {{- end }}
 {{- end -}}

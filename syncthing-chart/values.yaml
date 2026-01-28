@@ -43,8 +43,9 @@ gateway:
   gatewayClassName: traefik
   # The hostname used to access the Syncthing GUI
   hostname: syncthing.k3s.local
-  # Certificate name for HTTPS
-  certificateName: syncthing-tls
+  # Certificate name for HTTPS. 
+  # If left empty, Traefik will use its default certificate (if configured).
+  certificateName: ""
 
 # Traefik Ingress Configuration (Used for UDP until Gateway API supports it)
 traefik:

@@ -38,8 +38,9 @@ gateway:
   gatewayClassName: traefik
   # The hostname used to access Radicale
   hostname: radicale.k3s.local
-  # Certificate name for HTTPS
-  certificateName: radicale-tls
+  # Certificate name for HTTPS. 
+  # If left empty, Traefik will use its default certificate (if configured).
+  certificateName: ""
 
 securityContext:
   runAsUser: 1000
