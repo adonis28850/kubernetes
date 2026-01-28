@@ -3,4 +3,4 @@ name: syncthing
 description: A Helm chart for Syncthing with Kubernetes Gateway API and dual persistent volume support.
 type: application
 version: 1.0.0
-appVersion: "latest"
+appVersion: "1.27.3"

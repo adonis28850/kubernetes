@@ -2,8 +2,8 @@ replicaCount: 1
 
 image:
   repository: tomsquest/docker-radicale
-  pullPolicy: Always
-  tag: "latest"
+  pullPolicy: IfNotPresent
+  tag: "" # defaults to appVersion
 
 namespace: radicale
 

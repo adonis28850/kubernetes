@@ -2,8 +2,8 @@ replicaCount: 1
 
 image:
   repository: syncthing/syncthing
-  pullPolicy: Always
-  tag: "latest"
+  pullPolicy: IfNotPresent
+  tag: "" # defaults to appVersion
 
 # Target namespace for the Syncthing chart resources.
 # Note: It is recommended to install with:
