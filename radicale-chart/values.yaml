@@ -1,0 +1,60 @@
+replicaCount: 1
+
+image:
+  repository: tomsquest/docker-radicale
+  pullPolicy: Always
+  tag: "latest"
+
+namespace: radicale
+
+# Persistence configuration using static provisioning with local PVs
+persistence:
+  # Configuration volume
+  config:
+    storageClass: local-storage
+    size: 500Mi
+    # Mounted as read-only to prevent modifications by the pod
+    accessMode: ReadOnlyMany
+    # Host path on the node where data is stored
+    hostPath: /home/antonio/data/radicale/config/
+  # Data volume
+  data:
+    storageClass: local-storage
+    size: 10Gi
+    accessMode: ReadWriteOnce
+    # Host path on the node where data is stored
+    hostPath: /home/antonio/data/radicale/data/
+  # Node where the local volumes are physically located
+  nodeName: k3s-cluster
+
+service:
+  type: ClusterIP
+  port: 5232
+
+# Gateway API Configuration
+gateway:
+  name: traefik-gateway
+  namespace: traefik
+  gatewayClassName: traefik
+  # The hostname used to access Radicale
+  hostname: radicale.k3s.local
+  # Certificate name for HTTPS
+  certificateName: radicale-tls
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: Always
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+env: {}

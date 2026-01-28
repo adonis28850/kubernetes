@@ -78,4 +78,27 @@
     Set appropriate permissions (Owner: read/write/execute, Group: read/execute)
     # chmod -R 755 /home/antonio/data/syncthing/
 
-    # helm install syncthing syncthing-chart
+    # helm install syncthing syncthing-chart/ --namespace syncthing --create-namespace
+
+## Install Radicale via Helm:
+
+    Ensure the defined folders for the local PV exist and have the right permissions as per the Helm Chart.
+
+    Create the directories
+    # mkdir -p /home/antonio/data/radicale/config/
+    # mkdir -p /home/antonio/data/radicale/data/
+
+    Create config file:
+    # cp radicale-chart/config /home/antonio/data/radicale/config
+
+    Create a secret with the htpasswd credentials:
+    # htpasswd -c auth username
+    # kubectl create secret generic radicale-auth --from-file=auth -n radicale --create-namespace
+
+    Set ownership to UID 1000 and GID 1000 (matching the securityContext)
+    # chown -R 1000:1000 /home/antonio/data/radicale/
+
+    Set appropriate permissions (Owner: read/write/execute, Group: read/execute)
+    # chmod -R 755 /home/antonio/data/radicale/
+
+    # helm install radicale radicale-chart --namespace radicale

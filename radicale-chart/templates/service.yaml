@@ -1,0 +1,18 @@
+# Service for Radicale
+apiVersion: v1
+kind: Service
+metadata:
+  name: radicale
+  namespace: {{ .Values.namespace }}
+spec:
+  # Service type (e.g., ClusterIP, NodePort, LoadBalancer)
+  type: {{ .Values.service.type }}
+  selector:
+    app: radicale
+  ports:
+    - name: radicale
+      # The port that the service will serve on
+      port: {{ .Values.service.port }}
+      # The port on the container to forward to
+      targetPort: {{ .Values.service.port }}
+      protocol: TCP

@@ -1,0 +1,25 @@
+# HTTPRoute for Radicale using Kubernetes Gateway API.
+# This route directs traffic from the Gateway to the Radicale Service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radicale
+  namespace: {{ .Values.namespace }}
+spec:
+  # Reference to the Gateway that should handle this route
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+      sectionName: websecure
+  # The domain name associated with this route
+  hostnames:
+    - {{ .Values.gateway.hostname }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      # Routing to the backend service
+      backendRefs:
+        - name: radicale
+          port: {{ .Values.service.port }}

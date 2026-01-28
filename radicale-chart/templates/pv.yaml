@@ -1,0 +1,51 @@
+# PersistentVolume for Radicale configuration
+# Uses local storage on a specific node
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radicale-config-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.config.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.config.accessMode }}
+  # Retain policy ensures data is not deleted when PVC is deleted
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.config.storageClass }}
+  local:
+    path: {{ .Values.persistence.config.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}
+---
+# PersistentVolume for Radicale data
+# Uses local storage on a specific node
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radicale-data-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.data.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  # Retain policy ensures data is not deleted when PVC is deleted
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  local:
+    path: {{ .Values.persistence.data.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}

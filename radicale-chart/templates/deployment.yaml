@@ -1,0 +1,73 @@
+# Deployment for Radicale
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radicale
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: radicale
+spec:
+  # Number of replicas for high availability (though limited by local PVs)
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: radicale
+  template:
+    metadata:
+      labels:
+        app: radicale
+    spec:
+      # Pod-level security configuration
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: radicale
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Container-level security configuration
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: radicale
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          # Health checks to ensure the service is running and ready
+          livenessProbe:
+            tcpSocket:
+              port: radicale
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: radicale
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            # Mount the radicale config file from PV
+            - name: config
+              mountPath: /etc/radicale/config
+              subPath: config
+              readOnly: true
+            # Mount the storage directory for data
+            - name: data
+              mountPath: /data
+            # Mount the users authentication file from Secret
+            - name: auth
+              mountPath: /auth/users
+              subPath: users
+              readOnly: true
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: radicale-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: radicale-data
+        - name: auth
+          secret:
+            secretName: radicale-auth

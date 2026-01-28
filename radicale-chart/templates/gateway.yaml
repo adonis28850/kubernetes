@@ -1,0 +1,24 @@
+{{- $existingGateway := (lookup "gateway.networking.k8s.io/v1" "Gateway" .Values.gateway.namespace .Values.gateway.name) -}}
+{{- if not $existingGateway -}}
+# Gateway resource that defines the entry point for external traffic to Radicale.
+# This gateway is configured for HTTPS termination at port 443.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  namespace: {{ .Values.gateway.namespace }}
+spec:
+  # The GatewayClass must be available in the cluster (e.g., provided by Traefik)
+  gatewayClassName: {{ .Values.gateway.gatewayClassName | default "traefik" }}
+  listeners:
+    - name: websecure
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.gateway.certificateName | default "radicale-tls" }}
+{{- end -}}

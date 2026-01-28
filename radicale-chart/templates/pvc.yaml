@@ -1,0 +1,33 @@
+# PVC for Radicale configuration persistence
+# Explicitly bound to the radicale-config-pv PersistentVolume
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radicale-config
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.config.accessMode }}
+  storageClassName: {{ .Values.persistence.config.storageClass }}
+  # Manual binding to the PV
+  volumeName: radicale-config-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.config.size }}
+---
+# PVC for Radicale data persistence
+# Explicitly bound to the radicale-data-pv PersistentVolume
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radicale-data
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  # Manual binding to the PV
+  volumeName: radicale-data-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
