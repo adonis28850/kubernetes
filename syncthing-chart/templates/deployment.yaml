@@ -1,0 +1,79 @@
+# Deployment for Syncthing application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: syncthing
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: syncthing
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          env:
+            # Environment variables defined in values.yaml
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            # Internal Syncthing address and directory configurations
+            - name: STGUIADDRESS
+              value: "0.0.0.0:{{ .Values.service.guiPort }}"
+            - name: STHOMEDIR
+              value: "/var/syncthing/config"
+            - name: HOME
+              value: "/var/syncthing"
+          ports:
+            - name: gui
+              containerPort: {{ .Values.service.guiPort }}
+              protocol: TCP
+            - name: sync-tcp
+              containerPort: {{ .Values.service.syncTcpPort }}
+              protocol: TCP
+            - name: sync-udp
+              containerPort: {{ .Values.service.syncUdpPort }}
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: gui
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: gui
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /var/syncthing/config
+            - name: data
+              mountPath: /var/syncthing/data
+      # Deployment uses static PV/PVCs for configuration and data persistence
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: syncthing-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: syncthing-data

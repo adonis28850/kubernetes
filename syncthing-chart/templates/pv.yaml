@@ -1,0 +1,49 @@
+# Static PersistentVolume for Syncthing configuration
+# Uses Rancher's local-path provisioner but with Retain reclaim policy and static path
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: syncthing-config-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.config.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.config.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.config.storageClass }}
+  local:
+    path: {{ .Values.persistence.config.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}
+---
+# Static PersistentVolume for Syncthing data
+# Uses Rancher's local-path provisioner but with Retain reclaim policy and static path
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: syncthing-data-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.data.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  local:
+    path: {{ .Values.persistence.data.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}

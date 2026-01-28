@@ -1,0 +1,71 @@
+# NetworkPolicy to restrict traffic to the Syncthing pod
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: syncthing-policy
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: syncthing
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow TCP traffic (GUI and Sync) from the Gateway namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.gateway.namespace }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.guiPort }}
+        - protocol: TCP
+          port: {{ .Values.service.syncTcpPort }}
+    # Allow UDP traffic (Sync) from the Traefik namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.traefik.namespace }}
+      ports:
+        - protocol: UDP
+          port: {{ .Values.service.syncUdpPort }}
+    # Allow Local Discovery (UDP) from the local network - Not working with Traefik + UDP broadcasts
+    #- from:
+    #    - ipBlock:
+    #        cidr: 0.0.0.0/0
+    #  ports:
+    #    - protocol: UDP
+    #      port: 21027
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow outbound traffic for syncing with external nodes, relays, and discovery
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.syncTcpPort }}
+        - protocol: UDP
+          port: {{ .Values.service.syncUdpPort }}
+        # Local Discovery
+        #- protocol: UDP
+        #  port: 21027
+        # Global Discovery
+        - protocol: TCP
+          port: 443
+        # Relay Protocol
+        - protocol: TCP
+          port: 22067
+        # Relay Connection
+        - protocol: TCP
+          port: 22070

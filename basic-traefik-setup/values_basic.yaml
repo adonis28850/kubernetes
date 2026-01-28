@@ -1,0 +1,67 @@
+# Traefik configuration providers
+providers:
+  # Kubernetes Gateway API provider configuration
+  kubernetesGateway:
+    enabled: true
+    # Enable experimental features (required for some Gateway API features such as TCPRule and UDPRule)
+    experimentalChannel: true
+  # Enable traditional Kubernetes Ingress provider for UDP traffic
+  kubernetesIngress:
+    enabled: true
+
+  # Enable Traefik Custom Resources provider (required for IngressRouteUDP)
+  kubernetesCRD:
+    enabled: true
+
+# Redirection at the entrypoint level (static config). HTTP to HTTPS
+ports:
+  web:
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  # UDP port for UDP traffic
+  udppoint:
+    port: 9000
+    expose:
+      default: true
+    protocol: UDP
+
+rbac:
+  enabled: true
+
+metrics:
+  prometheus:
+    enabled: true
+
+# Kubernetes Gateway API resource configuration
+gateway:
+  # Enable the generation of the Gateway resource
+  enabled: true
+  name: traefik-gateway
+  gatewayClassName: traefik
+  # Definition of listeners for the Gateway
+  listeners:
+    # HTTP listener on port 8000
+    web:
+      port: 8000
+      protocol: HTTP
+      # Allow HTTPRoutes from any namespace to attach to this listener
+      namespacePolicy:
+        from: All
+    # HTTPS listener on port 8443
+    websecure:
+      port: 8443
+      protocol: HTTPS
+      # Allow HTTPRoutes from any namespace to attach to this listener
+      namespacePolicy:
+        from: All
+      # TLS configuration for the HTTPS listener
+      certificateRefs:
+        - kind: Secret
+          name: local-selfsigned-tls
+      # TLS termination mode
+      mode: Terminate

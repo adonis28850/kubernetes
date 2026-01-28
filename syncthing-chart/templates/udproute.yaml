@@ -1,0 +1,19 @@
+{{- /*
+# UDPRoute for Syncthing UDP sync traffic using Kubernetes Gateway API.
+# This implementation follows the Gateway API specification.
+# Note: Enabling this requires a Gateway controller that supports UDPRoute (e.g., Traefik with experimental features enabled).
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: syncthing-udp
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+      sectionName: syncthing-udp
+  rules:
+    - backendRefs:
+        - name: syncthing
+          port: {{ .Values.service.syncUdpPort }}
+*/ -}}

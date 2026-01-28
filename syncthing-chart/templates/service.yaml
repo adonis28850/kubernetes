@@ -1,0 +1,23 @@
+# Internal ClusterIP service for Syncthing
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: syncthing
+  ports:
+    - name: gui
+      port: {{ .Values.service.guiPort }}
+      targetPort: {{ .Values.service.guiPort }}
+      protocol: TCP
+    - name: sync-tcp
+      port: {{ .Values.service.syncTcpPort }}
+      targetPort: {{ .Values.service.syncTcpPort }}
+      protocol: TCP
+    - name: sync-udp
+      port: {{ .Values.service.syncUdpPort }}
+      targetPort: {{ .Values.service.syncUdpPort }}
+      protocol: UDP

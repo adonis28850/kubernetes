@@ -1,0 +1,15 @@
+# TCPRoute for Syncthing TCP sync traffic using Kubernetes Gateway API.
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: syncthing-tcp
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+      sectionName: syncthing-tcp
+  rules:
+    - backendRefs:
+        - name: syncthing
+          port: {{ .Values.service.syncTcpPort }}

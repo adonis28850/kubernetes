@@ -1,0 +1,6 @@
+apiVersion: v2
+name: basic-traefik-setup
+description: A Helm chart for a basic Traefik setup with Gateway API and Dashboard
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

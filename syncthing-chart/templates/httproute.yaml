@@ -1,0 +1,21 @@
+# This HTTPRoute configures the Syncthing GUI to be accessible via the Gateway API.
+# It matches the hostname defined in values.yaml and routes traffic to the syncthing service on the GUI port.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: syncthing-gui
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+  hostnames:
+    - {{ .Values.gateway.hostname }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: syncthing
+          port: {{ .Values.service.guiPort }}

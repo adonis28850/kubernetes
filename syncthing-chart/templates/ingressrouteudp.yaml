@@ -1,0 +1,15 @@
+# IngressRouteUDP resources for Syncthing UDP traffic.
+# This approach is used as a fallback because some Gateway API controllers might not fully support UDPRoute yet.
+# DEPRECATION NOTICE: This IngressRouteUDP implementation is intended to be replaced by Gateway API's UDPRoute in the future.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: syncthing-udp
+  namespace: {{ .Values.namespace }}
+spec:
+  entryPoints:
+    - syncthing-udp
+  routes:
+    - services:
+        - name: syncthing
+          port: {{ .Values.service.syncUdpPort }}

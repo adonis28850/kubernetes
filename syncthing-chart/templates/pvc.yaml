@@ -1,0 +1,31 @@
+# PVC for Syncthing configuration persistence
+# Bound to static PersistentVolume syncthing-config-pv
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncthing-config
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.config.accessMode }}
+  storageClassName: {{ .Values.persistence.config.storageClass }}
+  volumeName: syncthing-config-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.config.size }}
+---
+# PVC for Syncthing data persistence
+# Bound to static PersistentVolume syncthing-data-pv
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncthing-data
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  volumeName: syncthing-data-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}

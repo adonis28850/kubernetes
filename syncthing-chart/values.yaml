@@ -1,0 +1,82 @@
+replicaCount: 1
+
+image:
+  repository: syncthing/syncthing
+  pullPolicy: Always
+  tag: "latest"
+
+# Target namespace for the Syncthing chart resources.
+# Note: It is recommended to install with:
+# helm install syncthing syncthing-chart/ --namespace syncthing
+# If the namespace does not exist, you can add the --create-namespace flag.
+# If you get an ownership error, ensure the namespace doesn't have conflicting labels/annotations.
+namespace: syncthing
+
+persistence:
+  # Node name where the local volumes are located.
+  nodeName: k3s-cluster
+  config:
+    storageClass: local-path
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    # Host path for the config volume
+    hostPath: /home/antonio/data/syncthing/config/
+  data:
+    storageClass: local-path
+    size: 10Gi
+    accessMode: ReadWriteOnce
+    # Host path for the data volume
+    hostPath: /home/antonio/data/syncthing/data/
+
+# Discovery port is left out, as Traefik does not work well with UDP broadcasts.
+service:
+  type: ClusterIP
+  guiPort: 8384
+  syncTcpPort: 22000
+  syncUdpPort: 22000
+
+# Gateway API Configuration
+# This section is used to configure the Syncthing GUI and sync traffic via the Kubernetes Gateway API.
+gateway:
+  name: traefik-gateway
+  namespace: traefik
+  gatewayClassName: traefik
+  # The hostname used to access the Syncthing GUI
+  hostname: syncthing.k3s.local
+  # Certificate name for HTTPS
+  certificateName: syncthing-tls
+
+# Traefik Ingress Configuration (Used for UDP until Gateway API supports it)
+traefik:
+  namespace: traefik
+
+# Syncthing environment variables
+env:
+  # STNOUPNP=1 disables UPnP/NAT-PMP, which is recommended in Kubernetes
+  # as it prevents "Failed to acquire open port" errors when trying to 
+  # configure the cluster's gateway.
+  STNOUPNP: "1"
+  # STNONATPMP=1 explicitly disables NAT-PMP.
+  STNONATPMP: "1"
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  # fsGroupChangePolicy defines when Kubernetes should change the ownership and permissions of the volume.
+  # 'Always' ensures that the fsGroup is applied recursively every time the volume is mounted,
+  # which helps resolve permission issues on certain storage providers (like local-path).
+  fsGroupChangePolicy: Always
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+networkPolicy: {}
+
