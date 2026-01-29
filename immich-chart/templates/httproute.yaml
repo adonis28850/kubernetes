@@ -19,4 +19,5 @@ spec:
       backendRefs:
         - name: immich-server
           namespace: {{ .Values.namespace }}
-          port: 3001
+          port: 2283
+          group: ""

@@ -11,8 +11,8 @@ spec:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: server
   ports:
-    - port: 3001
-      targetPort: 3001
+    - port: 2283
+      targetPort: 2283
       protocol: TCP
       name: http
 ---

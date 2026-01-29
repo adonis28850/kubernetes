@@ -10,7 +10,7 @@ spec:
   gatewayClassName: {{ .Values.gateway.gatewayClassName | default "traefik" }}
   listeners:
     - name: websecure
-      port: 443
+      port: 8443
       protocol: HTTPS
       allowedRoutes:
         namespaces:

@@ -180,7 +180,7 @@ spec:
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
-            - containerPort: 3003
+            - containerPort: 2283
           env:
             - name: IMMICH_METRICS
               value: "false"

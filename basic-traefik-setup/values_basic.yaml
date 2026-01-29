@@ -43,6 +43,7 @@ gateway:
   enabled: true
   name: traefik-gateway
   gatewayClassName: traefik
+
   # Definition of listeners for the Gateway
   listeners:
     # HTTP listener on port 8000
@@ -52,6 +53,7 @@ gateway:
       # Allow HTTPRoutes from any namespace to attach to this listener
       namespacePolicy:
         from: All
+
     # HTTPS listener on port 8443
     websecure:
       port: 8443
