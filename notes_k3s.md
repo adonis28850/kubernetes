@@ -118,5 +118,5 @@
     Set permissions to allow the containers to read and write
     # chmod -R 775 /home/antonio/data/immich
 
-    # helm install radicale radicale-chart --namespace radicale --create-namespace
+    # helm install immich immich-chart --namespace immich --create-namespace
     
