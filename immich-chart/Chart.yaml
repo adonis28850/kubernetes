@@ -1,0 +1,6 @@
+apiVersion: v2
+name: immich-chart
+description: A Helm chart for Immich, a self-hosted photo and video management solution.
+type: application
+version: 0.1.0
+appVersion: "v2.5.0"

@@ -1,0 +1,44 @@
+# Persistent Volume Claims for Immich
+# These claims bind to the manually created local PVs.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-library
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.library.accessMode }}
+  storageClassName: {{ .Values.persistence.library.storageClass }}
+  volumeName: immich-library-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.library.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-database
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.database.accessMode }}
+  storageClassName: {{ .Values.persistence.database.storageClass }}
+  volumeName: immich-database-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.database.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-valkey
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.valkey.accessMode }}
+  storageClassName: {{ .Values.persistence.valkey.storageClass }}
+  volumeName: immich-valkey-pv
+  resources:
+    requests:
+      storage: {{ .Values.persistence.valkey.size }}

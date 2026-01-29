@@ -1,0 +1,83 @@
+# Immich Component Services
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: server
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+---
+{{- if .Values.immich.microservices.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-microservices
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: microservices
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-machine-learning
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 3003
+      targetPort: 3003
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: machine-learning
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-database
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: database
+  selector:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-valkey
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+      name: valkey
+  selector:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: valkey

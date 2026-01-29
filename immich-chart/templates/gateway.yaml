@@ -1,0 +1,24 @@
+{{- $existingGateway := (lookup "gateway.networking.k8s.io/v1" "Gateway" .Values.gateway.namespace .Values.gateway.name) -}}
+{{- if not $existingGateway -}}
+# Immich Gateway
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  namespace: {{ .Values.gateway.namespace }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName | default "traefik" }}
+  listeners:
+    - name: websecure
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        {{- if .Values.gateway.certificateName }}
+        certificateRefs:
+          - name: {{ .Values.gateway.certificateName }}
+        {{- end }}
+{{- end -}}

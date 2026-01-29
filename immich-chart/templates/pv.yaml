@@ -1,0 +1,71 @@
+# Persistent Volumes for Immich
+# Using local storage with static provisioning and Retain policy to preserve data.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-library-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.library.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.library.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.library.storageClass }}
+  local:
+    path: {{ .Values.persistence.library.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-database-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.database.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.database.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.database.storageClass }}
+  local:
+    path: {{ .Values.persistence.database.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-valkey-pv
+spec:
+  capacity:
+    storage: {{ .Values.persistence.valkey.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.valkey.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.valkey.storageClass }}
+  local:
+    path: {{ .Values.persistence.valkey.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.persistence.nodeName }}

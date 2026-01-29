@@ -1,0 +1,87 @@
+# Default values for immich-chart.
+
+namespace: immich
+
+# Common image configuration
+image:
+  pullPolicy: IfNotPresent
+
+# Immich Server, Microservices and Machine Learning settings
+immich:
+  server:
+    repository: ghcr.io/immich-app/immich-server
+    tag: "" # defaults to appVersion
+    replicaCount: 1
+  microservices:
+    repository: ghcr.io/immich-app/immich-server
+    tag: "" # defaults to appVersion
+    replicaCount: 1
+    enabled: false
+  machineLearning:
+    repository: ghcr.io/immich-app/immich-machine-learning
+    tag: "" # defaults to appVersion
+    replicaCount: 1
+
+# Database settings
+database:
+  image:
+    repository: ghcr.io/immich-app/postgres
+    tag: 14-vectorchord0.4.3-pgvectors0.2.0
+  auth:
+    database: immich
+    user: postgres
+    password: immichpassword
+
+# Valkey settings (Caching layer)
+valkey:
+  image:
+    repository: valkey/valkey
+    tag: 8-alpine
+
+service:
+  type: ClusterIP
+
+# Storage settings
+persistence:
+  # Node name where the local volumes are physically located
+  nodeName: k3s-cluster
+  library:
+    storageClass: local-path
+    size: 100Gi
+    accessMode: ReadWriteOnce
+    hostPath: /home/antonio/data/immich/library
+  database:
+    storageClass: local-path
+    size: 10Gi
+    accessMode: ReadWriteOnce
+    hostPath: /home/antonio/data/immich/database
+  valkey:
+    storageClass: local-path
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    hostPath: /home/antonio/data/immich/valkey
+
+# Gateway API settings
+gateway:
+  name: traefik-gateway
+  namespace: traefik
+  gatewayClassName: traefik
+  hostname: immich.k3s.local
+  # Certificate name for HTTPS. 
+  # If left empty, Traefik will use its default certificate (if configured).
+  certificateName: ""
+
+# Security Contexts
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000

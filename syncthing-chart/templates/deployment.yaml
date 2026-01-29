@@ -21,6 +21,8 @@ spec:
       labels:
         app: syncthing
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
       securityContext:
         {{- toYaml .Values.securityContext | nindent 8 }}
       containers:

@@ -22,6 +22,8 @@ spec:
       labels:
         app: radicale
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
       # Pod-level security configuration
       securityContext:
         {{- toYaml .Values.securityContext | nindent 8 }}

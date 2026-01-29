@@ -102,3 +102,21 @@
     # chmod -R 755 /home/antonio/data/radicale/
 
     # helm install radicale radicale-chart --namespace radicale
+
+## Install Immich via Helm:
+
+    Ensure the defined folders for the local PVs exist and have the right permissions as per the Helm Chart.
+
+    Create the directories
+    # mkdir -p /home/antonio/data/immich/library
+    # mkdir -p /home/antonio/data/immich/database
+    # mkdir -p /home/antonio/data/immich/valkey
+
+    Apply proper ownership (UID 1000, GID 1000)
+    # chown -R 1000:1000 /home/antonio/data/immich
+
+    Set permissions to allow the containers to read and write
+    # chmod -R 775 /home/antonio/data/immich
+
+    # helm install radicale radicale-chart --namespace radicale --create-namespace
+    

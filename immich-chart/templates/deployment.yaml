@@ -1,0 +1,313 @@
+# Immich Component Deployments
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: server
+spec:
+  replicas: {{ .Values.immich.server.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: server
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-database
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -vz -w 5 immich-database 5432; do echo waiting for database; sleep 2; done;']
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+        - name: wait-for-valkey
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -vz -w 5 immich-valkey 6379; do echo waiting for valkey; sleep 2; done;']
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+      containers:
+        - name: server
+          image: "{{ .Values.immich.server.repository }}:{{ .Values.immich.server.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - containerPort: 3001
+          env:
+            - name: DB_HOSTNAME
+              value: immich-database
+            - name: DB_USERNAME
+              value: {{ .Values.database.auth.user }}
+            - name: DB_PASSWORD
+              value: {{ .Values.database.auth.password }}
+            - name: DB_DATABASE_NAME
+              value: {{ .Values.database.auth.database }}
+            - name: REDIS_HOSTNAME
+              value: immich-valkey
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://immich-machine-learning:3003
+            - name: IMMICH_METRICS
+              value: "false"
+          volumeMounts:
+            - name: library
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich-library
+        - name: tmp
+          emptyDir: {}
+---
+{{- if .Values.immich.microservices.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-microservices
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: microservices
+spec:
+  replicas: {{ .Values.immich.microservices.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: microservices
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: microservices
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: microservices
+          image: "{{ .Values.immich.microservices.repository }}:{{ .Values.immich.microservices.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["start.sh", "microservices"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          env:
+            - name: DB_HOSTNAME
+              value: immich-database
+            - name: DB_USERNAME
+              value: {{ .Values.database.auth.user }}
+            - name: DB_PASSWORD
+              value: {{ .Values.database.auth.password }}
+            - name: DB_DATABASE_NAME
+              value: {{ .Values.database.auth.database }}
+            - name: REDIS_HOSTNAME
+              value: immich-valkey
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://immich-machine-learning:3003
+          volumeMounts:
+            - name: library
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich-library
+        - name: tmp
+          emptyDir: {}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: machine-learning
+spec:
+  replicas: {{ .Values.immich.machineLearning.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: machine-learning
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: machine-learning
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: machine-learning
+          image: "{{ .Values.immich.machineLearning.repository }}:{{ .Values.immich.machineLearning.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - containerPort: 3003
+          env:
+            - name: IMMICH_METRICS
+              value: "false"
+          volumeMounts:
+            - name: model-cache
+              mountPath: /cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: model-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-database
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: database
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: database
+          image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_DB
+              value: {{ .Values.database.auth.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.database.auth.user }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.auth.password }}
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+            - name: tmp
+              mountPath: /tmp
+            - name: run-database
+              mountPath: /var/run/postgresql
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: immich-database
+        - name: tmp
+          emptyDir: {}
+        - name: run-database
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-valkey
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: valkey
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: valkey
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: valkey
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.persistence.nodeName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: valkey
+          image: "{{ .Values.valkey.image.repository }}:{{ .Values.valkey.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: valkey-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: valkey-data
+          persistentVolumeClaim:
+            claimName: immich-valkey
+        - name: tmp
+          emptyDir: {}
