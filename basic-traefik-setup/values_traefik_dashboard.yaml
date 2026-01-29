@@ -9,7 +9,7 @@ extraObjects:
   - apiVersion: traefik.io/v1alpha1
     kind: Middleware
     metadata:
-      name: traefik-dashboard-auth
+      name: dashboard-auth
       namespace: traefik
     spec:
       basicAuth:
@@ -57,7 +57,7 @@ extraObjects:
               extensionRef:
                 group: traefik.io
                 kind: Middleware
-                name: traefik-dashboard-auth
+                name: dashboard-auth
           backendRefs:
             - name: api@internal
               group: traefik.io

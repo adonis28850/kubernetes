@@ -8,7 +8,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   entryPoints:
-    - syncthing-udp
+    - udppoint
   routes:
     - services:
         - name: syncthing
