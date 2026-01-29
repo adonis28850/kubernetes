@@ -70,7 +70,7 @@ spec:
             - name: config
               mountPath: /var/syncthing/config
             - name: data
-              mountPath: /var/syncthing
+              mountPath: /var/syncthing/data
       # Deployment uses static PV/PVCs for configuration and data persistence
       volumes:
         - name: config
