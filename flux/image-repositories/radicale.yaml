@@ -1,0 +1,8 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: radicale
+  namespace: flux-system
+spec:
+  image: tomsquest/docker-radicale
+  interval: 1h

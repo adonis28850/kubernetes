@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: syncthing/syncthing
   pullPolicy: IfNotPresent
-  tag: "" # defaults to appVersion
+  tag: "" # {"$imagepolicy": "flux-system:syncthing-policy"}
 
 # Target namespace for the Syncthing chart resources.
 # Note: It is recommended to install with:

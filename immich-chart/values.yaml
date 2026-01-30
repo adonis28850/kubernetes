@@ -10,16 +10,16 @@ image:
 immich:
   server:
     repository: ghcr.io/immich-app/immich-server
-    tag: "" # defaults to appVersion
+    tag: "" # "$imagepolicy": "flux-system:immich-server-policy"}
     replicaCount: 1
   microservices:
     repository: ghcr.io/immich-app/immich-server
-    tag: "" # defaults to appVersion
+    tag: "" # {"$imagepolicy": "flux-system:immich-server-policy"}
     replicaCount: 1
     enabled: false
   machineLearning:
     repository: ghcr.io/immich-app/immich-machine-learning
-    tag: "" # defaults to appVersion
+    tag: "" # {"$imagepolicy": "flux-system:immich-ml-policy"}
     replicaCount: 1
 
 # Database settings

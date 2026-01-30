@@ -1,0 +1,8 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: immich-ml
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/immich-machine-learning
+  interval: 1h

@@ -1,0 +1,40 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: image-update-automation
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: kubernetes-repo
+
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      authorName: Flux Bot
+      authorEmail: flux@casa.local
+      messageTemplate: |
+        chore: update images
+        {{range .Updated.Images -}}
+        - {{.NewImage}}
+        {{end}}
+    push:
+      branch: flux/image-updates
+
+  update:
+    strategy: PullRequest
+    path: ./ # repo root
+    pullRequest:
+      provider: github
+      title: "chore: update container images"
+      body: |
+        Flux detected new container image versions and updated Helm chart values.
+        Please review, test locally if needed, and merge before deploying with Helm.
+      commit:
+        authorName: Flux Bot
+        authorEmail: flux@casa.local
+      mergeMethod: squash
+``

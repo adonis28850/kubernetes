@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: tomsquest/docker-radicale
   pullPolicy: IfNotPresent
-  tag: "" # defaults to appVersion
+  tag: "" # {"$imagepolicy": "flux-system:radicale-policy"}
 
 namespace: radicale
 

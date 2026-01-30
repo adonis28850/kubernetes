@@ -1,0 +1,9 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: kubernetes-repo
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/adonis28850/kubernetes
+  branch: main
