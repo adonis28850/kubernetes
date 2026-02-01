@@ -1,12 +1,9 @@
 replicaCount: 1
-
 image:
   repository: tomsquest/docker-radicale
   pullPolicy: IfNotPresent
-  tag: "" # {"$imagepolicy": "flux-system:radicale-policy"}
-
+  tag: "tomsquest/docker-radicale:3.6.0.0" # {"$imagepolicy": "flux-system:radicale-policy"}
 namespace: radicale
-
 # Persistence configuration using static provisioning with local PVs
 persistence:
   # Configuration volume
@@ -26,11 +23,9 @@ persistence:
     hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Radicale/data/
   # Node where the local volumes are physically located
   nodeName: k3s-cluster
-
 service:
   type: ClusterIP
   port: 5232
-
 # Gateway API Configuration
 gateway:
   name: traefik-gateway
@@ -41,7 +36,6 @@ gateway:
   # Certificate name for HTTPS. 
   # If left empty, Traefik will use its default certificate (if configured).
   certificateName: ""
-
 securityContext:
   runAsUser: 1000
   runAsGroup: 1000
@@ -50,12 +44,10 @@ securityContext:
   runAsNonRoot: true
   seccompProfile:
     type: RuntimeDefault
-
 containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
   readOnlyRootFilesystem: true
-
 env: {}

@@ -1,11 +1,9 @@
 # Default values for immich-chart.
 
 namespace: immich
-
 # Common image configuration
 image:
   pullPolicy: IfNotPresent
-
 # Immich Server, Microservices and Machine Learning settings
 immich:
   server:
@@ -14,14 +12,13 @@ immich:
     replicaCount: 1
   microservices:
     repository: ghcr.io/immich-app/immich-server
-    tag: "" # {"$imagepolicy": "flux-system:immich-server-policy"}
+    tag: "ghcr.io/immich-app/immich-server:v2.5.2" # {"$imagepolicy": "flux-system:immich-server-policy"}
     replicaCount: 1
     enabled: false
   machineLearning:
     repository: ghcr.io/immich-app/immich-machine-learning
-    tag: "" # {"$imagepolicy": "flux-system:immich-ml-policy"}
+    tag: "ghcr.io/immich-app/immich-machine-learning:v2.5.2" # {"$imagepolicy": "flux-system:immich-ml-policy"}
     replicaCount: 1
-
 # Database settings
 database:
   image:
@@ -31,16 +28,13 @@ database:
     database: immich
     user: postgres
     password: immichpassword
-
 # Valkey settings (Caching layer)
 valkey:
   image:
     repository: valkey/valkey
     tag: 8-alpine
-
 service:
   type: ClusterIP
-
 # Storage settings
 persistence:
   # Node name where the local volumes are physically located
@@ -60,7 +54,6 @@ persistence:
     size: 1Gi
     accessMode: ReadWriteOnce
     hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Immich/ImmichValKey
-
 # Gateway API settings
 gateway:
   name: traefik-gateway
@@ -70,13 +63,11 @@ gateway:
   # Certificate name for HTTPS. 
   # If left empty, Traefik will use its default certificate (if configured).
   certificateName: ""
-
 # Security Contexts
 podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
-
 containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
