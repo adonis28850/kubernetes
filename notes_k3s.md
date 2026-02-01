@@ -93,7 +93,8 @@
 
     Create a secret with the htpasswd credentials:
     # htpasswd -c auth username
-    # kubectl create secret generic radicale-auth --from-file=auth -n radicale --create-namespace
+    # kubectl create namespace radicale
+    # kubectl create secret generic radicale-auth --from-file=auth -n radicale
 
     Set ownership to UID 1000 and GID 1000 (matching the securityContext)
     # chown -R 1000:1000 /home/antonio/data/radicale/
