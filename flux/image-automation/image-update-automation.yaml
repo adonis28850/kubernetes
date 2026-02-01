@@ -17,7 +17,7 @@ spec:
         email: flux@casa.local
         name: Flux Bot
       # Using a stable string to avoid Go template evaluation errors
-      messageTemplate: "chore: flux image update"
+      messageTemplate: "chore: Flux image update"
     push:
       branch: main
   update:
