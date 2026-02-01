@@ -7,11 +7,12 @@ spec:
   imageRepositoryRef:
     name: radicale
   policy:
-    semver:
-      range: ">=1.0.0"
-  filterSelection:
-    # Captures the first 3 numeric segments to satisfy SemVer rules
-    # but still allows the full tag to be used if matched.
-    extract: '$1.$2.$3'
-    regex: '^([0-9]+)\.([0-9]+)\.([0-9]+)(?:\.[0-9]+)?$'
+    alphabetical:
+      order: asc
+  filterTags:
+    # Limits the first digit to 1 or 2 characters to ignore '386' prefixes
+    # Matches: 3.6.0.0, 10.1.2.3
+    # Ignores: 386.3.0.6.3
+    pattern: '^([0-9]{1,2}(?:\.[0-9]+)+)$'
+    extract: '$1'
 
