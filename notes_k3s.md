@@ -2,7 +2,7 @@
 
 ## Install with Secrets encryption using "secretbox"
 
-    # curl -sfL https://get.k3s.io | sh -s - server --secrets-encryption --secrets-encryption-provider secretbox --disable=traefik --node-name k3s-cluster
+    # curl -sfL https://get.k3s.io | sh -s - server --secrets-encryption --secrets-encryption-provider secretbox --disable=traefik --node-name k3s-cluster  --tls-san openmediavault --tls-san 192.168.0.227
 
     # sudo k3s secrets-encrypt status
 

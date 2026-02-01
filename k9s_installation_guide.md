@@ -1,4 +1,3 @@
-
 # k9s Installation & Setup Guide for k3s (Single‑Node Homelab)
 
 This guide explains how to install, configure, and use **k9s**, the best TUI (Terminal UI) for managing a Kubernetes cluster — perfect for your single‑node k3s environment.

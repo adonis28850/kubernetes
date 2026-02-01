@@ -64,6 +64,6 @@ gateway:
       # TLS configuration for the HTTPS listener
       certificateRefs:
         - kind: Secret
-          name: local-selfsigned-tls
+          name: casa-local-tls
       # TLS termination mode
       mode: Terminate
