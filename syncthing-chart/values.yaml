@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: syncthing/syncthing
   pullPolicy: IfNotPresent
-  tag: "syncthing/syncthing:2.0.13" # {"$imagepolicy": "flux-system:syncthing-policy"}
+  tag: "2.0.13" # {"$imagepolicy": "flux-system:syncthing-policy:tag"}
 # Target namespace for the Syncthing chart resources.
 # Note: It is recommended to install with:
 # helm install syncthing syncthing-chart/ --namespace syncthing

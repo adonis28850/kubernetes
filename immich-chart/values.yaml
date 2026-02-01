@@ -8,16 +8,16 @@ image:
 immich:
   server:
     repository: ghcr.io/immich-app/immich-server
-    tag: "" # "$imagepolicy": "flux-system:immich-server-policy"}
+    tag: "v2.5.2" # "$imagepolicy": "flux-system:immich-server-policy:tag"}
     replicaCount: 1
   microservices:
     repository: ghcr.io/immich-app/immich-server
-    tag: "ghcr.io/immich-app/immich-server:v2.5.2" # {"$imagepolicy": "flux-system:immich-server-policy"}
+    tag: "v2.5.2" # {"$imagepolicy": "flux-system:immich-server-policy:tag"}
     replicaCount: 1
     enabled: false
   machineLearning:
     repository: ghcr.io/immich-app/immich-machine-learning
-    tag: "ghcr.io/immich-app/immich-machine-learning:v2.5.2" # {"$imagepolicy": "flux-system:immich-ml-policy"}
+    tag: "v2.5.2" # {"$imagepolicy": "flux-system:immich-ml-policy:tag"}
     replicaCount: 1
 # Database settings
 database:
