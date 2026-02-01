@@ -137,7 +137,7 @@ spec:
         - protocol: TCP
           port: 3003
   egress:
-    # Only allow DNS
+      # Allow DNS
     - to:
         - namespaceSelector:
             matchLabels:
@@ -147,6 +147,21 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+    # Allow Database access (required for some ML tasks)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow HTTPS to the Internet for Downloading AI Models (Hugging Face)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
