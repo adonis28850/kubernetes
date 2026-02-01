@@ -14,6 +14,8 @@ This document contains all commands and steps required to:
 ```bash
 kubectl create namespace flux-system
 
+curl -s https://fluxcd.io/install.sh | sudo bash
+
 flux install   --components=source-controller,image-reflector-controller,image-automation-controller,notification-controller   --namespace=flux-system
 ```
 

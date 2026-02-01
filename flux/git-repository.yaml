@@ -6,4 +6,10 @@ metadata:
 spec:
   interval: 1m
   url: https://github.com/adonis28850/kubernetes
-  branch: main
+  # The 'branch' field must be inside 'ref'
+  ref:
+    branch: main
+  # Also, link your secret here if you want to use it for authentication
+  secretRef:
+    name: github-token
+
