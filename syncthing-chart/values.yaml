@@ -42,7 +42,7 @@ gateway:
   namespace: traefik
   gatewayClassName: traefik
   # The hostname used to access the Syncthing GUI
-  hostname: syncthing.k3s.local
+  hostname: syncthing.casa.local
   # Certificate name for HTTPS. 
   # If left empty, Traefik will use its default certificate (if configured).
   certificateName: ""

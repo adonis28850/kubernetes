@@ -66,7 +66,7 @@ gateway:
   name: traefik-gateway
   namespace: traefik
   gatewayClassName: traefik
-  hostname: immich.k3s.local
+  hostname: immich.casa.local
   # Certificate name for HTTPS. 
   # If left empty, Traefik will use its default certificate (if configured).
   certificateName: ""
