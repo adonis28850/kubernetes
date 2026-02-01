@@ -20,13 +20,13 @@ persistence:
     size: 1Gi
     accessMode: ReadWriteOnce
     # Host path for the config volume
-    hostPath: /home/antonio/data/syncthing/config/
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Syncthing/config/
   data:
     storageClass: local-path
     size: 10Gi
     accessMode: ReadWriteOnce
     # Host path for the data volume
-    hostPath: /home/antonio/data/syncthing/data/
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Syncthing/data/
 
 # Discovery port is left out, as Traefik does not work well with UDP broadcasts.
 service:

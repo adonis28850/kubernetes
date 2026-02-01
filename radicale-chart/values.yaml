@@ -16,14 +16,14 @@ persistence:
     # Mounted as read-only to prevent modifications by the pod
     accessMode: ReadOnlyMany
     # Host path on the node where data is stored
-    hostPath: /home/antonio/data/radicale/config/
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Radicale/config/
   # Data volume
   data:
     storageClass: local-storage
     size: 10Gi
     accessMode: ReadWriteOnce
     # Host path on the node where data is stored
-    hostPath: /home/antonio/data/radicale/data/
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Radicale/data/
   # Node where the local volumes are physically located
   nodeName: k3s-cluster
 

@@ -49,17 +49,17 @@ persistence:
     storageClass: local-path
     size: 100Gi
     accessMode: ReadWriteOnce
-    hostPath: /home/antonio/data/immich/library
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Immich/ImmichUploads
   database:
     storageClass: local-path
     size: 10Gi
     accessMode: ReadWriteOnce
-    hostPath: /home/antonio/data/immich/database
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Immich/ImmichDB
   valkey:
     storageClass: local-path
     size: 1Gi
     accessMode: ReadWriteOnce
-    hostPath: /home/antonio/data/immich/valkey
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Immich/ImmichValKey
 
 # Gateway API settings
 gateway:
