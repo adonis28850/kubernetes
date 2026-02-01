@@ -1,0 +1,104 @@
+# Extra Kubernetes resources for Traefik Dashboard and OpenMediaVault
+extraObjects:
+  # 1. MIDDLEWARE: Security layer for the Traefik Dashboard
+  # This resource defines the Basic Auth logic that Traefik applies to incoming requests.
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: dashboard-auth
+      namespace: traefik
+    spec:
+      basicAuth:
+        secret: dashboard-auth # References a K8s Secret containing 'user:hashed-password'
+
+  # 2. HTTPROUTE: Routing for the Traefik Dashboard
+  # Connects the 'traefik.casa.local' hostname to Traefik's internal API service.
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: traefik-dashboard
+      namespace: traefik
+    spec:
+      hostnames:
+        - traefik.casa.local
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure # Enforces HTTPS via the Gateway's websecure listener
+      rules:
+        # RULE A: Redirect root '/' to '/dashboard/' to ensure the UI loads correctly
+        - matches:
+            - path: { type: Exact, value: / }
+          filters:
+            - type: RequestRedirect
+              requestRedirect: { path: { type: ReplaceFullPath, replaceFullPath: /dashboard/ }, statusCode: 302 }
+        # RULE B: Route API and Dashboard traffic and apply the Authentication Middleware
+        - matches:
+            - path: { type: PathPrefix, value: /dashboard/ }
+            - path: { type: PathPrefix, value: /api/ }
+          filters:
+            - type: ExtensionRef
+              extensionRef: { group: traefik.io, kind: Middleware, name: dashboard-auth }
+          backendRefs:
+            - name: api@internal # Targets Traefik's built-in internal dashboard service
+              group: traefik.io
+              kind: TraefikService
+              port: 8080
+
+  # 3. SERVICE: The logical bridge for OpenMediaVault
+  # This creates a named entry in the cluster. It has no 'selector' because 
+  # we are manually pointing it to the Host OS IP in the next step.
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: omv-external
+      namespace: traefik
+    spec:
+      ports:
+        - protocol: TCP
+          port: 8080 # The port Traefik will 'call' internally
+          targetPort: 8080
+
+  # 4. ENDPOINTSLICE: The modern (v1.33+) way to map a Service to a physical IP
+  # This replaces the deprecated 'Endpoints' object to eliminate CLI warnings.
+  - apiVersion: discovery.k8s.io/v1
+    kind: EndpointSlice
+    metadata:
+      name: omv-external-slice
+      namespace: traefik
+      labels:
+        # CRITICAL: This label links this slice to the 'omv-external' Service above
+        kubernetes.io/service-name: omv-external
+    addressType: IPv4
+    ports:
+      - port: 8080 # The OMV HTTP port currently listening on your host OS
+        protocol: TCP
+    endpoints:
+      - addresses:
+          - 10.42.0.1 # The K3s Host Gateway IP (found via 'ip addr show cni0'), could also use external OMV IP
+        conditions:
+          # CRITICAL: Tells Traefik this backend is active.
+          # Without 'ready: true', Traefik ignores the IP and returns 'No available server'.
+          ready: true
+
+  # 5. HTTPROUTE: The Public Entry Point for OpenMediaVault
+  # Maps 'openmediavault.casa.local' to the 'omv-external' Service.
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: omv-gui-route
+      namespace: traefik
+    spec:
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure # Enforces HTTPS for the user
+      hostnames:
+        - "openmediavault.casa.local"
+      rules:
+        - matches:
+            - path: { type: PathPrefix, value: / }
+          backendRefs:
+            - name: omv-external # Routes to the Service defined in Step 3
+              port: 8080
+

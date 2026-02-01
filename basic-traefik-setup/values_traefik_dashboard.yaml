@@ -24,7 +24,7 @@ extraObjects:
     spec:
       # Hostname for the dashboard
       hostnames:
-        - traefik.k3s.local
+        - traefik.casa.local
       # Attach primarily to the websecure (HTTPS) listener
       parentRefs:
         - name: traefik-gateway

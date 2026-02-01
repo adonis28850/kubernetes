@@ -62,7 +62,7 @@
 
     Apply the custom values:
 
-    # helm upgrade traefik traefik/traefik --namespace traefik -f values_basic.yaml -f values_traefik_dashboard.yaml --reuse-values
+    # helm upgrade traefik traefik/traefik --namespace traefik -f values_basic.yaml -f values_extra_services --reuse-values
 
 ## Install Syncthing via Helm:
 
