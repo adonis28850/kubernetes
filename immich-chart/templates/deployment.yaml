@@ -53,7 +53,7 @@ spec:
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
-            - containerPort: 3001
+            - containerPort: 2283
           env:
             - name: DB_HOSTNAME
               value: immich-database
@@ -75,17 +75,15 @@ spec:
             - name: tmp
               mountPath: /tmp
           livenessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: 3001
+            tcpSocket:
+              port: 2283
             initialDelaySeconds: {{ .Values.probes.server.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.server.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.server.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.server.liveness.failureThreshold }}
           readinessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: 3001
+            tcpSocket:
+              port: 2283
             initialDelaySeconds: {{ .Values.probes.server.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.server.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.server.readiness.timeoutSeconds }}
@@ -153,17 +151,15 @@ spec:
             - name: tmp
               mountPath: /tmp
           livenessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: 3001
+            tcpSocket:
+              port: 2283
             initialDelaySeconds: {{ .Values.probes.microservices.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.microservices.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.microservices.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.microservices.liveness.failureThreshold }}
           readinessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: 3001
+            tcpSocket:
+              port: 2283
             initialDelaySeconds: {{ .Values.probes.microservices.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.microservices.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.microservices.readiness.timeoutSeconds }}
@@ -212,7 +208,7 @@ spec:
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
-            - containerPort: 2283
+            - containerPort: 3003
           env:
             - name: IMMICH_METRICS
               value: "false"
@@ -222,17 +218,15 @@ spec:
             - name: tmp
               mountPath: /tmp
           livenessProbe:
-            httpGet:
-              path: /
-              port: 2283
+            tcpSocket:
+              port: 3003
             initialDelaySeconds: {{ .Values.probes.machineLearning.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.machineLearning.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.machineLearning.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.machineLearning.liveness.failureThreshold }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: 2283
+            tcpSocket:
+              port: 3003
             initialDelaySeconds: {{ .Values.probes.machineLearning.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.machineLearning.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.machineLearning.readiness.timeoutSeconds }}
