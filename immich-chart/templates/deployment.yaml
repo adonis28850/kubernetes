@@ -74,6 +74,22 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /api/server-info/ping
+              port: 3001
+            initialDelaySeconds: {{ .Values.probes.server.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.server.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.server.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.server.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /api/server-info/ping
+              port: 3001
+            initialDelaySeconds: {{ .Values.probes.server.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.server.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.server.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.server.readiness.failureThreshold }}
       volumes:
         - name: library
           persistentVolumeClaim:
@@ -136,6 +152,22 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /api/server-info/ping
+              port: 3001
+            initialDelaySeconds: {{ .Values.probes.microservices.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.microservices.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.microservices.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.microservices.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /api/server-info/ping
+              port: 3001
+            initialDelaySeconds: {{ .Values.probes.microservices.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.microservices.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.microservices.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.microservices.readiness.failureThreshold }}
       volumes:
         - name: library
           persistentVolumeClaim:
@@ -189,6 +221,22 @@ spec:
               mountPath: /cache
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 2283
+            initialDelaySeconds: {{ .Values.probes.machineLearning.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.machineLearning.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.machineLearning.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.machineLearning.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 2283
+            initialDelaySeconds: {{ .Values.probes.machineLearning.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.machineLearning.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.machineLearning.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.machineLearning.readiness.failureThreshold }}
       volumes:
         - name: model-cache
           emptyDir: {}
@@ -254,6 +302,25 @@ spec:
               mountPath: /tmp
             - name: run-database
               mountPath: /var/run/postgresql
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: {{ .Values.probes.database.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.database.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.database.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.database.liveness.failureThreshold }}
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: {{ .Values.probes.database.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.database.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.database.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.database.readiness.failureThreshold }}
+      volumes:
+            - name: tmp
+              mountPath: /tmp
+            - name: run-database
+              mountPath: /var/run/postgresql
       volumes:
         - name: db-data
           persistentVolumeClaim:
@@ -305,6 +372,20 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: {{ .Values.probes.valkey.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.valkey.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.valkey.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.valkey.liveness.failureThreshold }}
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: {{ .Values.probes.valkey.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.valkey.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.valkey.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.valkey.readiness.failureThreshold }}
       volumes:
         - name: valkey-data
           persistentVolumeClaim:
