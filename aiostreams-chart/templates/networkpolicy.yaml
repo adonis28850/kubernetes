@@ -1,6 +1,6 @@
 # AIOStreams NetworkPolicy
 # Restricts network access to/from AIOStreams pods for security.
-# Only allows ingress from Traefik and egress to DNS and external streaming providers.
+# Only allows ingress from Traefik and Jellyfin, and egress to DNS and external streaming providers.
 
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -18,12 +18,19 @@ spec:
   policyTypes:
     - Ingress
     - Egress
-  # Allow ingress only from Traefik (for external access)
+  # Allow ingress from Traefik (for external access) and Jellyfin (for API calls)
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jellyfin
       ports:
         - protocol: TCP
           port: {{ .Values.service.port }}
