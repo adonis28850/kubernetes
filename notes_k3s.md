@@ -171,6 +171,7 @@
     For Jellyfin
     # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
     # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+    # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/media
     # chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
     # chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
 
@@ -193,8 +194,11 @@
     # helm install aiostreams ./aiostreams-chart --namespace aiostreams --create-namespace
 
     Deploy Jellyfin
+    # kubectl apply -f ./jellyfin-chart/pv.yaml
+    # kubectl apply -f ./jellyfin-chart/pvc.yaml
     # helm install jellyfin jellyfin/jellyfin --namespace jellyfin --create-namespace -f ./jellyfin-chart/values.yaml
     # kubectl apply -f ./jellyfin-chart/httproute.yaml
+
 
     Apply Flux image repositories
     # kubectl apply -f flux/image-repositories/jellyfin.yaml

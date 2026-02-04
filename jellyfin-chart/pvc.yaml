@@ -1,0 +1,57 @@
+# Jellyfin PersistentVolumeClaims
+# Claims the static PVs for Jellyfin storage.
+# These PVCs are bound to the corresponding PVs by name.
+
+# Config PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  namespace: jellyfin
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-path
+  volumeName: jellyfin-config-pv
+---
+# Media PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-media
+  namespace: jellyfin
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Gi
+  storageClassName: local-path
+  volumeName: jellyfin-media-pv
+---
+# Cache PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-cache
+  namespace: jellyfin
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
+  volumeName: jellyfin-cache-pv

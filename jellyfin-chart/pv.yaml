@@ -1,0 +1,81 @@
+# Jellyfin PersistentVolumes
+# Static PVs that provide storage for Jellyfin configuration, media, and cache.
+# Binds to the local-path storage on the k3s-cluster node.
+
+# Config PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-config-pv
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: config
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  local:
+    path: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-cluster
+---
+# Media PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-media-pv
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: media
+spec:
+  capacity:
+    storage: 25Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  local:
+    path: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/media
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-cluster
+---
+# Cache PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-cache-pv
+  labels:
+    app.kubernetes.io/name: jellyfin
+    type: cache
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  local:
+    path: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-cluster

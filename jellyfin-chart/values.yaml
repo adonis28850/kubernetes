@@ -106,28 +106,25 @@ persistence:
   # Config storage - Jellyfin application configuration
   config:
     enabled: true
-    size: 1Gi
-    accessMode: ReadWriteOnce
-    storageClass: local-path
-    # Host path on the OpenMediaVault server
-    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
-  # Cache storage - Used for transcoding temporary files (5Gi recommended for 4K content)
-  cache:
+    # Use existing static PVC instead of creating a new one
+    existingClaim: jellyfin-config
+  # Media storage - Used for local media or cache
+  media:
     enabled: true
-    size: 5Gi
-    accessMode: ReadWriteOnce
-    storageClass: local-path
-    # Host path on the OpenMediaVault server
-    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
-  # Media paths (for Real-Debrid streaming, no local media needed)
-  movies:
-    enabled: false
-  tvshows:
-    enabled: false
-  music:
-    enabled: false
-  photos:
-    enabled: false
+    type: pvc
+    # Use existing static PVC instead of creating a new one
+    existingClaim: jellyfin-media
+
+# Extra volumes for cache (transcoding)
+# The official chart doesn't support cache, so we add it via extra volumes
+extraVolumes:
+  - name: cache
+    persistentVolumeClaim:
+      claimName: jellyfin-cache
+
+extraVolumeMounts:
+  - name: cache
+    mountPath: /cache
 
 # NetworkPolicy configuration (using official chart's values)
 networkPolicy:
