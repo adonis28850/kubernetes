@@ -1,0 +1,44 @@
+# AIOStreams NetworkPolicy
+# Restricts network access to/from AIOStreams pods for security.
+# Only allows ingress from Traefik and egress to DNS and external streaming providers.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-%s" .Release.Name .Values.name) }}-networkpolicy
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  # Apply this policy only to AIOStreams pods
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Allow ingress only from Traefik (for external access)
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+  # Allow egress to DNS and external streaming providers
+  egress:
+    # DNS access for domain resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow all egress for accessing external streaming providers (Torrentio, Comet, Real-Debrid)
+    - {}

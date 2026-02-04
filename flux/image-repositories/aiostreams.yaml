@@ -1,0 +1,12 @@
+# AIOStreams Image Repository
+# Monitors the AIOStreams Docker image for new tags.
+# Flux scans this repository every hour to detect new versions.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: aiostreams
+  namespace: flux-system
+spec:
+  image: ghcr.io/viren070/aiostreams
+  interval: 1h

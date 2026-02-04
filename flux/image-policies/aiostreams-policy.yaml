@@ -1,0 +1,16 @@
+# AIOStreams Image Policy
+# Defines which versions of AIOStreams to track.
+# Uses semver filtering to track 2.x.x versions.
+# When a new version is detected, Flux updates the image tag in values.yaml.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: aiostreams-policy
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: aiostreams
+  policy:
+    semver:
+      range: 2.x.x

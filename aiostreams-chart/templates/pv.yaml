@@ -1,0 +1,31 @@
+# AIOStreams PersistentVolume
+# Static PV that provides storage for AIOStreams configuration and data.
+# Binds to the local-path storage on the k3s-cluster node.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-%s" .Release.Name .Values.name) }}-data-pv
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  capacity:
+    storage: {{ .Values.persistence.data.size }}
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  # Retain ensures data is preserved even if the PVC is deleted
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  # Local storage on the host node
+  local:
+    path: {{ .Values.persistence.data.hostPath }}
+  # Node affinity ensures this PV is only used by pods on the k3s-cluster node
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.node.name }}

@@ -1,0 +1,16 @@
+# Jellyfin Image Policy
+# Defines which versions of Jellyfin to track.
+# Uses semver filtering to track 10.x.x versions.
+# When a new version is detected, Flux updates the image tag in values.yaml.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: jellyfin-policy
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: jellyfin
+  policy:
+    semver:
+      range: 10.x.x

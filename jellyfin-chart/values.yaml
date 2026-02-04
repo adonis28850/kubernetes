@@ -1,0 +1,171 @@
+# Jellyfin Helm Chart Values
+# This file configures the official Jellyfin Helm chart for deployment.
+# See: https://github.com/jellyfin/jellyfin-helm
+
+# Image configuration
+image:
+  repository: jellyfin/jellyfin
+  pullPolicy: IfNotPresent
+  # Flux image automation marker - Flux will update this tag when new versions are released
+  tag: "10.11.6" # {"$imagepolicy": "flux-system:jellyfin-policy:tag"}
+
+# Replica configuration
+replicaCount: 1
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8096
+
+# Ingress configuration (disabled - using Gateway API instead)
+ingress:
+  enabled: false
+
+# HTTPRoute configuration for Gateway API
+httpRoute:
+  enabled: true
+  annotations: {}
+  # Gateway references to attach this HTTPRoute to
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  # Hostnames to match for this HTTPRoute
+  hostnames:
+    - jellyfin.casa.local
+  # Rules for routing traffic
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+# Gateway API configuration (for reference only, httpRoute handles this)
+gateway:
+  name: traefik-gateway
+  namespace: traefik
+  gatewayClassName: traefik
+  certificateName: local-selfsigned-tls
+
+# HTTPRoute configuration
+httproute:
+  hostname: jellyfin.casa.local
+
+# Node configuration for static PV binding
+node:
+  name: k3s-cluster
+
+# Security context
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  # Set to false for Jellyfin to allow writes to cache and transcoding files
+  readOnlyRootFilesystem: false
+
+# Hardware acceleration configuration
+# Intel QuickSync on Intel N100 (Alder Lake-N) CPU
+# This enables hardware transcoding for better performance
+hardwareAcceleration:
+  enabled: true
+  deviceType: intel
+  devicePath: /dev/dri
+  devices:
+    - /dev/dri/renderD128
+    - /dev/dri/card0
+
+# Health check probes configuration
+probes:
+  liveness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Storage configuration (using official chart's persistence values)
+persistence:
+  enabled: true
+  # Config storage - Jellyfin application configuration
+  config:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: local-path
+    # Host path on the OpenMediaVault server
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
+  # Cache storage - Used for transcoding temporary files (5Gi recommended for 4K content)
+  cache:
+    enabled: true
+    size: 5Gi
+    accessMode: ReadWriteOnce
+    storageClass: local-path
+    # Host path on the OpenMediaVault server
+    hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+  # Media paths (for Real-Debrid streaming, no local media needed)
+  movies:
+    enabled: false
+  tvshows:
+    enabled: false
+  music:
+    enabled: false
+  photos:
+    enabled: false
+
+# NetworkPolicy configuration (using official chart's values)
+networkPolicy:
+  enabled: true
+  # Allow ingress only from Traefik (for external access)
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8096
+  # Allow egress to DNS and external sources (Real-Debrid, etc.)
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - {}
+
+# Node selector - ensures pods run on the k3s-cluster node
+nodeSelector:
+  kubernetes.io/hostname: k3s-cluster
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Additional environment variables
+extraEnv: []
+  # - name: JELLYFIN_PublishedServerUrl
+  #   value: https://jellyfin.casa.local

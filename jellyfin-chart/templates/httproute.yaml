@@ -1,0 +1,25 @@
+{{- if .Values.httpRoute.enabled -}}
+# Jellyfin HTTPRoute
+# Routes HTTPS traffic from the Traefik Gateway to the Jellyfin service.
+# This allows external access to Jellyfin via jellyfin.casa.local.
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-%s" .Release.Name .Chart.Name) }}-httproute
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  hostnames:
+    {{- toYaml .Values.httpRoute.hostnames | nindent 4 }}
+  rules:
+    {{- toYaml .Values.httpRoute.rules | nindent 4 }}
+{{- end }}

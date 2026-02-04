@@ -39,7 +39,7 @@ Flux will **not** apply any manifests to your cluster.
 Create the Kubernetes secret:
 
 ```bash
-kubectl create secret generic github-token   --namespace=flux-system   --from-literal=password='github_pat_1...' --from-literal=username=adonis28850;
+kubectl create secret generic github-token   --namespace=flux-system   --from-literal=password='github_pat_1...' --from-literal=username=xxxx;
 ```
 
 This allows Flux to open PRs on your repository.

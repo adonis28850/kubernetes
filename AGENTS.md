@@ -16,6 +16,8 @@ This is a single-node k3s cluster configuration running on an OpenMediaVault ser
 1. **Immich** - Self-hosted photo and video management platform
 2. **Syncthing** - Continuous file synchronization program
 3. **Radicale** - CalDAV and CardDAV server
+4. **Jellyfin** - Media server for streaming movies and TV shows with Real-Debrid integration via Gelato plugin
+5. **AIOStreams** - Stremio addon for aggregating streaming sources (Torrentio, Comet, etc.) with Real-Debrid
 
 ## Project Structure
 
@@ -44,6 +46,25 @@ kubernetes/
 │   ├── Chart.yaml
 │   ├── values.yaml
 │   └── templates/
+├── jellyfin-chart/            # Jellyfin Helm chart (official chart with custom values)
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+│       ├── gateway.yaml       # Gateway API configuration
+│       └── httproute.yaml     # HTTPRoute for jellyfin.casa.local
+├── aiostreams-chart/          # AIOStreams Helm chart (custom chart)
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       ├── gateway.yaml
+│       ├── httproute.yaml
+│       ├── pv.yaml
+│       ├── pvc.yaml
+│       ├── networkpolicy.yaml
+│       ├── configmap.yaml
+│       └── secret.yaml
 └── *.md                       # Various documentation and guides
 ```
 
@@ -157,6 +178,40 @@ chmod -R 775 /home/antonio/data/immich
 helm install immich immich-chart --namespace immich --create-namespace
 ```
 
+#### Jellyfin
+
+```bash
+# Create data directories
+mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
+mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
+chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
+
+# Add Jellyfin Helm repository
+helm repo add jellyfin https://jellyfin.github.io/jellyfin-helm
+helm repo update
+
+# Install
+helm install jellyfin jellyfin/jellyfin --namespace jellyfin --create-namespace -f ./jellyfin-chart/values.yaml
+```
+
+#### AIOStreams
+
+```bash
+# Create data directories
+mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams/data
+chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams
+chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams
+
+# Generate SECRET_KEY (64-character hex)
+openssl rand -hex 32
+
+# Update values.yaml with generated SECRET_KEY before installation
+
+# Install
+helm install aiostreams ./aiostreams-chart --namespace aiostreams --create-namespace
+```
+
 ### Configure Flux
 
 ```bash
@@ -173,7 +228,7 @@ flux install \
 kubectl create secret generic github-token \
   --namespace=flux-system \
   --from-literal=password='github_pat_1...' \
-  --from-literal=username=adonis28850
+  --from-literal=username=sxxxx
 
 # Apply Flux configuration
 kubectl apply -f flux/git-repository.yaml
@@ -190,6 +245,8 @@ When Flux detects new image versions and updates `values.yaml`:
 helm upgrade immich ./immich-chart -n immich
 helm upgrade syncthing ./syncthing-chart -n syncthing
 helm upgrade radicale ./radicale-chart -n radicale
+helm upgrade jellyfin jellyfin/jellyfin --namespace jellyfin -f ./jellyfin-chart/values.yaml
+helm upgrade aiostreams ./aiostreams-chart --namespace aiostreams
 ```
 
 ## Development Conventions
@@ -211,12 +268,24 @@ helm upgrade radicale ./radicale-chart -n radicale
   - immich.casa.local
   - syncthing.casa.local
   - radicale.casa.local
+  - jellyfin.casa.local
+  - aiostreams.casa.local
 
 ### Storage Configuration
 
 - Uses `local-path` StorageClass for static storage provisioning
 - All persistent volumes are bound to a specific node `k3s-cluster`
 - Data is stored on OpenMediaVault mounted disks (UUID: 2a3b438e-c3d9-4623-80b5-2a887dae15fe)
+
+**Storage paths:**
+- Immich: `/home/antonio/data/immich/`
+- Syncthing: `/home/antonio/data/syncthing/`
+- Radicale: `/home/antonio/data/radicale/`
+- Jellyfin: `/srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/`
+  - `config/` - Application configuration
+  - `cache/` - Transcoding cache (5Gi)
+- AIOStreams: `/srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams/`
+  - `data/` - Application data (1Gi)
 
 ### Security Configuration
 
@@ -288,9 +357,21 @@ kubectl logs -n flux-system deployment/image-automation-controller
 kubectl logs -n immich deployment/immich-server
 kubectl logs -n syncthing deployment/syncthing
 kubectl logs -n radicale deployment/radicale
+kubectl logs -n jellyfin deployment/jellyfin
+kubectl logs -n aiostreams deployment/aiostreams
 ```
 
 ## Common Issues
+
+### AIOStreams SECRET_KEY Not Set
+
+AIOStreams requires a 64-character hex SECRET_KEY. Generate it with:
+
+```bash
+openssl rand -hex 32
+```
+
+Update the value in `aiostreams-chart/values.yaml` before installation. Without this, the AIOStreams container will fail to start.
 
 ### Permission Issues
 
@@ -312,6 +393,29 @@ Ensure GitHub token has correct permissions:
 - Permissions: Contents (read/write), Pull Requests (read/write)
 
 ### Traefik Cannot Access Applications
+
+Check Gateway and HTTPRoute resources are properly configured:
+
+```bash
+kubectl get gateway -A
+kubectl describe gateway traefik-gateway -n traefik
+kubectl get httproute -A
+kubectl describe httproute <route-name> -n <namespace>
+```
+
+### Jellyfin Hardware Acceleration Not Working
+
+Jellyfin is configured for Intel QuickSync hardware acceleration on the Intel N100 CPU. Ensure:
+
+1. `/dev/dri` device passthrough is enabled in the deployment
+2. The host has Intel GPU drivers installed (usually included in the kernel)
+3. Check Jellyfin logs for hardware acceleration status:
+   ```bash
+   kubectl logs -n jellyfin deployment/jellyfin
+   ```
+4. Verify transcoding settings in Jellyfin web UI: Settings → Playback → Transcoding
+
+If hardware acceleration fails, Jellyfin will fall back to software transcoding, which will be slower on the N100 CPU.
 
 Check Gateway and HTTPRoute resources are properly configured:
 

@@ -1,0 +1,30 @@
+{{- $existingGateway := (lookup "gateway.networking.k8s.io/v1" "Gateway" .Values.gateway.namespace .Values.gateway.name) -}}
+{{- if not $existingGateway -}}
+# Jellyfin Gateway
+# This Gateway is created only if it doesn't already exist.
+# It provides a shared HTTPS entry point for applications using Traefik.
+# All applications reuse the same Gateway (traefik-gateway) in the traefik namespace.
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  namespace: {{ .Values.gateway.namespace }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName | default "traefik" }}
+  listeners:
+    - name: websecure
+      port: 8443
+      protocol: HTTPS
+      # Allow routes from all namespaces to use this Gateway
+      allowedRoutes:
+        namespaces:
+          from: All
+      # TLS termination using self-signed certificate
+      tls:
+        mode: Terminate
+        {{- if .Values.gateway.certificateName }}
+        certificateRefs:
+          - name: {{ .Values.gateway.certificateName }}
+        {{- end }}
+{{- end -}}

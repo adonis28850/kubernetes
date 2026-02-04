@@ -1,0 +1,21 @@
+# AIOStreams Service
+# ClusterIP service that exposes AIOStreams within the cluster.
+# Traffic from outside the cluster comes through Traefik via Gateway API.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-%s" .Release.Name .Values.name) }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

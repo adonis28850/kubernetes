@@ -80,6 +80,20 @@
 
     # helm install syncthing syncthing-chart/ --namespace syncthing --create-namespace
 
+    Apply Flux image repositories
+    # kubectl apply -f flux/image-repositories/syncthing.yaml
+
+    Apply Flux image policies
+    # kubectl apply -f flux/image-policies/syncthing-policy.yaml
+
+    # Then verify Flux is monitoring them:
+
+    Check image repositories
+    # kubectl get imagerepository -n flux-system
+
+    Check image policies
+    # kubectl get imagepolicy -n flux-system
+
 ## Install Radicale via Helm:
 
     Ensure the defined folders for the local PV exist and have the right permissions as per the Helm Chart.
@@ -104,6 +118,21 @@
 
     # helm install radicale radicale-chart --namespace radicale
 
+
+    Apply Flux image repositories
+    # kubectl apply -f flux/image-repositories/radicale.yaml
+
+    Apply Flux image policies
+    # kubectl apply -f flux/image-policies/radicale-policy.yaml
+
+    # Then verify Flux is monitoring them:
+
+    Check image repositories
+    # kubectl get imagerepository -n flux-system
+
+    Check image policies
+    # kubectl get imagepolicy -n flux-system
+
 ## Install Immich via Helm:
 
     Ensure the defined folders for the local PVs exist and have the right permissions as per the Helm Chart.
@@ -120,4 +149,67 @@
     # chmod -R 775 /home/antonio/data/immich
 
     # helm install immich immich-chart --namespace immich --create-namespace
-    
+
+    Apply Flux image repositories
+    # kubectl apply -f flux/image-repositories/immich.yaml
+
+    Apply Flux image policies
+    # kubectl apply -f flux/image-policies/immich-policy.yaml
+
+    # Then verify Flux is monitoring them:
+
+    Check image repositories
+    # kubectl get imagerepository -n flux-system
+
+    Check image policies
+    # kubectl get imagepolicy -n flux-system
+
+## Install Jellyfin + AIOStreams via Helm:
+
+    Ensure the defined folders for the local PVs exist and have the right permissions as per the Helm Charts.
+
+    For Jellyfin
+    # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
+    # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+    # chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
+    # chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
+
+    For AIOStreams
+    # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams/data
+    # chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams
+    # chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/AIOStreams
+
+    You need to generate a 64-character hex key for AIOStreams. Run this command on your server:
+
+    # openssl rand -hex 32
+
+    Then update ./kubernetes/aiostreams-chart/values.yaml replacing the placeholder with your generated key.
+
+    Add Jellyfin Helm repository
+    # helm repo add jellyfin https://jellyfin.github.io/jellyfin-helm
+    # helm repo update
+
+    Deploy AIOStreams
+    # helm install aiostreams ./aiostreams-chart --namespace aiostreams --create-namespace
+
+    Deploy Jellyfin
+    # helm install jellyfin jellyfin/jellyfin --namespace jellyfin --create-namespace -f ./jellyfin-chart/values.yaml
+    # kubectl apply -f ./jellyfin-chart/httproute.yaml
+
+    Apply Flux image repositories
+    # kubectl apply -f flux/image-repositories/jellyfin.yaml
+    # kubectl apply -f flux/image-repositories/aiostreams.yaml
+
+    Apply Flux image policies
+    # kubectl apply -f flux/image-policies/jellyfin-policy.yaml
+    # kubectl apply -f flux/image-policies/aiostreams-policy.yaml
+
+    # Then verify Flux is monitoring them:
+
+    Check image repositories
+    # kubectl get imagerepository -n flux-system
+
+    Check image policies
+    # kubectl get imagepolicy -n flux-system
+
+
