@@ -63,7 +63,7 @@ secret:
 
 # AIOStreams application configuration
 config:
-  baseUrl: https://aiostreams.casa.local
+  baseUrl: http://aiostreams-aiostreams.aiostreams.svc.cluster.local:3000
   # Additional environment variables for AIOStreams
   # See https://github.com/Viren070/AIOStreams/wiki/Configuration
   extraEnv:

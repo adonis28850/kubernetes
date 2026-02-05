@@ -216,14 +216,5 @@
     Check image policies
     # kubectl get imagepolicy -n flux-system
 
-    NOTE
-    Jellyfin/Gelato cannot reach the Manifest file from AIOStreams with the provided URL, his is because aiostreams.casa.local is an external domain that resolves to the internal IP (192.168.0.227), but Jellyfin can't resolve it through the internal Kubernetes DNS.
-
-    The solution is to use the internal Kubernetes service name instead of the external domain. The internal service name is aiostreams.aiostreams.svc.cluster.local or simply aiostreams.aiostreams.
-
-    Update the Gelato configuration in Jellyfin to use:
-
-     http://10.43.52.146:3000/stremio/...
-
 
 
