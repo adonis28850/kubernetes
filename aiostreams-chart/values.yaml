@@ -4,32 +4,26 @@
 # Chart name configuration
 name: aiostreams
 fullnameOverride: ""
-
 replicaCount: 1
-
 # Container image configuration
 image:
   repository: ghcr.io/viren070/aiostreams
   pullPolicy: IfNotPresent
   # Flux image automation marker - Flux will update this tag when new versions are released
-  tag: "v2.22.0" # {"$imagepolicy": "flux-system:aiostreams-policy:tag"}
-
+  tag: "v2.23.0" # {"$imagepolicy": "flux-system:aiostreams-policy:tag"}
 nameOverride: ""
 fullnameOverride: ""
-
 # Service account configuration (not used for AIOStreams)
 serviceAccount:
   create: false
   annotations: {}
   name: ""
-
 # Pod-level security context - runs as non-root user for security
 podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
   runAsNonRoot: true
-
 # Container-level security context - restricts privileges
 containerSecurityContext:
   allowPrivilegeEscalation: false
@@ -37,12 +31,10 @@ containerSecurityContext:
     drop:
       - ALL
   readOnlyRootFilesystem: true
-
 # Service configuration
 service:
   type: ClusterIP
   port: 3000
-
 # Gateway configuration
 gateway:
   name: traefik-gateway
@@ -50,31 +42,27 @@ gateway:
   gatewayClassName: traefik
   certificateName: local-selfsigned-tls
   hostname: aiostreams.casa.local
-
 # Node configuration for static PV binding
 node:
   name: k3s-cluster
-
 # Secret configuration
 secret:
   # IMPORTANT: Generate a 64-character hex key with: openssl rand -hex 32
   # Replace this placeholder with the generated key before deployment
   secretKey: "a38256bb918d60844613f94aaf239683115cbf280a94e30819d15f675e5383bf"
-
 # AIOStreams application configuration
 config:
   baseUrl: http://aiostreams-aiostreams.aiostreams.svc.cluster.local:3000
   # Additional environment variables for AIOStreams
   # See https://github.com/Viren070/AIOStreams/wiki/Configuration
   extraEnv:
-    # Example addon configurations (add your own)
-    # ADDON_TORRENTIO_URL: "https://torrentio.strem.fun"
-    # ADDON_COMET_URL: "https://comet.strem.fun"
-    # Add more addons as needed
+  # Example addon configurations (add your own)
+  # ADDON_TORRENTIO_URL: "https://torrentio.strem.fun"
+  # ADDON_COMET_URL: "https://comet.strem.fun"
+  # Add more addons as needed
 
   # ConfigMap data (if needed for additional configuration)
   map: {}
-
 # Health check probes configuration
 probes:
   liveness:
@@ -87,7 +75,6 @@ probes:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
-
 # Persistence configuration for AIOStreams data
 persistence:
   data:
