@@ -164,7 +164,7 @@
     Check image policies
     # kubectl get imagepolicy -n flux-system
 
-## Install Jellyfin + AIOStreams via Helm:
+## Install Jellyfin + Gluetun VPN + AIOStreams via Helm:
 
     Ensure the defined folders for the local PVs exist and have the right permissions as per the Helm Charts.
 
@@ -186,6 +186,16 @@
 
     Then update ./kubernetes/aiostreams-chart/values.yaml replacing the placeholder with your generated key.
 
+    Generate ProtonVPN WireGuard configuration for Gluetun:
+    1. Login to ProtonVPN web console
+    2. Go to Downloads → WireGuard configuration
+    3. Fill out the form:
+       - Platform: GNU/Linux
+       - Protocol: WireGuard
+       - Features: Select "Streaming" or leave default
+       - Country: Choose your preferred country
+    4. IMPORTANT: Note the Private Key - it's only shown once!
+
     Add Jellyfin Helm repository
     # helm repo add jellyfin https://jellyfin.github.io/jellyfin-helm
     # helm repo update
@@ -193,20 +203,35 @@
     Deploy AIOStreams
     # helm install aiostreams ./aiostreams-chart --namespace aiostreams --create-namespace
 
-    Deploy Jellyfin
+    Deploy Jellyfin with Gluetun VPN sidecar:
+    # kubectl create namespace jellyfin
     # kubectl apply -f ./jellyfin-chart/pv.yaml
     # kubectl apply -f ./jellyfin-chart/pvc.yaml
-    # helm install jellyfin jellyfin/jellyfin --namespace jellyfin --create-namespace -f ./jellyfin-chart/values.yaml
+    # kubectl create secret generic gluetun-vpn-credentials --from-literal=WIREGUARD_PRIVATE_KEY="your_private_key_from_protonvpn" --namespace jellyfin
+    # helm install jellyfin jellyfin/jellyfin --namespace jellyfin -f ./jellyfin-chart/values.yaml
     # kubectl apply -f ./jellyfin-chart/httproute.yaml
 
+    **NOTE:** This implementation uses extraContainers as a temporary workaround. The official
+    Jellyfin Helm chart v2.7.0 doesn't support extraInitContainers with restartPolicy: Always
+    for native Kubernetes sidecars. When chart v3.0.0 is released, this should be updated to use
+    extraInitContainers for proper sidecar behavior that blocks Jellyfin startup until VPN is ready.
+
+    Verify Gluetun VPN is working:
+    # kubectl logs -n jellyfin deployment/jellyfin -c gluetun | grep -i connected
+    # kubectl exec -n jellyfin deployment/jellyfin -- curl -s https://ipinfo.io/ip
+
+    Verify Jellyfin web UI is accessible:
+    # kubectl exec -n traefik deployment/traefik -- curl -s http://jellyfin.jellyfin.svc.cluster.local:8096/health
 
     Apply Flux image repositories
     # kubectl apply -f flux/image-repositories/jellyfin.yaml
     # kubectl apply -f flux/image-repositories/aiostreams.yaml
+    # kubectl apply -f flux/image-repositories/gluetun.yaml
 
     Apply Flux image policies
     # kubectl apply -f flux/image-policies/jellyfin-policy.yaml
     # kubectl apply -f flux/image-policies/aiostreams-policy.yaml
+    # kubectl apply -f flux/image-policies/gluetun-policy.yaml
 
     # Then verify Flux is monitoring them:
 

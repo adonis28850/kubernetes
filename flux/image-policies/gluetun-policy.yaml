@@ -1,0 +1,16 @@
+# Gluetun Image Policy
+# Defines which versions of Gluetun to track.
+# Uses semver filtering to track 3.x.x versions.
+# When a new version is detected, Flux updates the image tag in values.yaml.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: gluetun-policy
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: gluetun
+  policy:
+    semver:
+      range: 3.x.x

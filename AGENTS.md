@@ -16,7 +16,7 @@ This is a single-node k3s cluster configuration running on an OpenMediaVault ser
 1. **Immich** - Self-hosted photo and video management platform
 2. **Syncthing** - Continuous file synchronization program
 3. **Radicale** - CalDAV and CardDAV server
-4. **Jellyfin** - Media server for streaming movies and TV shows with Real-Debrid integration via Gelato plugin
+4. **Jellyfin** - Media server for streaming movies and TV shows with Real-Debrid integration via Gelato plugin. All outbound traffic routes through ProtonVPN using Gluetun native sidecar.
 5. **AIOStreams** - Stremio addon for aggregating streaming sources (Torrentio, Comet, etc.) with Real-Debrid
 
 ## Project Structure
@@ -49,9 +49,12 @@ kubernetes/
 ├── jellyfin-chart/            # Jellyfin Helm chart (official chart with custom values)
 │   ├── Chart.yaml
 │   ├── values.yaml
+│   ├── pv.yaml                # Static PersistentVolumes for Jellyfin
+│   ├── pvc.yaml               # PersistentVolumeClaims for Jellyfin
+│   ├── httproute.yaml         # HTTPRoute for jellyfin.casa.local
 │   └── templates/
 │       ├── gateway.yaml       # Gateway API configuration
-│       └── httproute.yaml     # HTTPRoute for jellyfin.casa.local
+│       └── gluetun-configmap.yaml  # Gluetun VPN client configuration
 ├── aiostreams-chart/          # AIOStreams Helm chart (custom chart)
 │   ├── Chart.yaml
 │   ├── values.yaml
@@ -178,21 +181,42 @@ chmod -R 775 /home/antonio/data/immich
 helm install immich immich-chart --namespace immich --create-namespace
 ```
 
-#### Jellyfin
+#### Jellyfin with Gluetun VPN Sidecar
 
 ```bash
 # Create data directories
 mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/config
 mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/cache
+mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin/media
 chown -R 1000:1000 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
 chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/Jellyfin
+
+# Create namespace
+kubectl create namespace jellyfin
+
+# Create PersistentVolumes and Claims
+kubectl apply -f ./jellyfin-chart/pv.yaml
+kubectl apply -f ./jellyfin-chart/pvc.yaml
+
+# Generate ProtonVPN WireGuard configuration
+# 1. Login to ProtonVPN web console
+# 2. Go to Downloads → WireGuard configuration
+# 3. Fill out the form and note the Private Key (shown only once!)
+
+# Create Gluetun VPN credentials secret
+kubectl create secret generic gluetun-vpn-credentials \
+  --from-literal=WIREGUARD_PRIVATE_KEY="your_private_key_from_protonvpn" \
+  --namespace jellyfin
 
 # Add Jellyfin Helm repository
 helm repo add jellyfin https://jellyfin.github.io/jellyfin-helm
 helm repo update
 
-# Install
-helm install jellyfin jellyfin/jellyfin --namespace jellyfin --create-namespace -f ./jellyfin-chart/values.yaml
+# Install with Gluetun sidecar
+helm install jellyfin jellyfin/jellyfin --namespace jellyfin -f ./jellyfin-chart/values.yaml
+
+# Apply HTTPRoute
+kubectl apply -f ./jellyfin-chart/httproute.yaml
 ```
 
 #### AIOStreams
@@ -270,6 +294,45 @@ helm upgrade aiostreams ./aiostreams-chart --namespace aiostreams
   - radicale.casa.local
   - jellyfin.casa.local
   - aiostreams.casa.local
+
+### VPN Networking with Gluetun
+
+**TEMPORARY WORKAROUND:** Jellyfin currently uses Gluetun via extraContainers as a workaround because the official Helm chart v2.7.0 doesn't support extraInitContainers with restartPolicy: Always. When chart v3.0.0 is released, this should be updated to use the proper native sidecar pattern that truly blocks Jellyfin startup until VPN is ready.
+
+Jellyfin uses **Gluetun** as a sidecar container to route all outbound internet traffic through ProtonVPN.
+
+**Architecture:**
+- **Gluetun** (sidecar): VPN client running continuously in the pod
+- **Jellyfin** (main container): Media server
+- Both containers share the same network namespace (Kubernetes pod model)
+
+**Current implementation limitations:**
+- Jellyfin starts alongside Gluetun (not blocked by VPN readiness)
+- Jellyfin uses startupProbe to check Gluetun health, but this doesn't fully prevent traffic leaks
+- Proper native sidecar pattern (extraInitContainers with restartPolicy: Always) will ensure no traffic flows until VPN is confirmed
+
+**How it works:**
+1. Gluetun establishes WireGuard connection to ProtonVPN
+2. Gluetun configures iptables to route all outbound traffic through VPN tunnel
+3. Jellyfin sends outbound requests (metadata, Real-Debrid API) which are automatically routed through VPN
+4. Inbound traffic to Jellyfin (web UI) is allowed via `FIREWALL_INPUT_PORTS: "8096"`
+5. Cluster DNS resolution is preserved via `DNS_KEEP_NAMESERVER: "on"`
+6. Cluster communication (e.g., AIOStreams → Jellyfin) is allowed via `FIREWALL_OUTBOUND_SUBNETS`
+
+**Traffic flow:**
+- **Outbound - Internet**: Jellyfin → Gluetun's default route → VPN tunnel → ProtonVPN → Internet
+- **Outbound - Cluster**: Jellyfin → Direct (bypasses VPN via firewall rules)
+- **Outbound - DNS**: Jellyfin → Cluster DNS (preserved via DNS_KEEP_NAMESERVER)
+- **Inbound - User**: User → Traefik → Service → Pod → Gluetun firewall (allows 8096) → Jellyfin
+
+**Benefits:**
+- Transparent to Jellyfin (no application changes needed)
+- All internet traffic through VPN (automatic via routing table)
+- Web UI still accessible (firewall allows port 8096)
+- Cluster services work (DNS and subnets configured)
+- Automatic startup (sidecar pattern ensures VPN ready first - will be improved with v3.0.0)
+- Kill switch (Gluetun blocks traffic if VPN disconnects)
+- Streaming-optimized servers for better performance
 
 ### Storage Configuration
 
@@ -416,6 +479,72 @@ Jellyfin is configured for Intel QuickSync hardware acceleration on the Intel N1
 4. Verify transcoding settings in Jellyfin web UI: Settings → Playback → Transcoding
 
 If hardware acceleration fails, Jellyfin will fall back to software transcoding, which will be slower on the N100 CPU.
+
+### Gluetun VPN Not Connecting
+
+If Jellyfin cannot connect through VPN:
+
+1. Check Gluetun logs for connection status:
+   ```bash
+   kubectl logs -n jellyfin deployment/jellyfin -c gluetun
+   ```
+
+2. Verify VPN credentials are correct:
+   ```bash
+   kubectl get secret gluetun-vpn-credentials -n jellyfin -o yaml
+   ```
+
+3. Check that VPN IP is reachable:
+   ```bash
+   kubectl exec -n jellyfin deployment/jellyfin -- ping -c 1 $(echo $WIREGUARD_ADDRESSES | cut -d'/' -f1)
+   ```
+
+4. Verify traffic is going through VPN:
+   ```bash
+   kubectl exec -n jellyfin deployment/jellyfin -- curl -s https://ipinfo.io/ip
+   ```
+
+5. Check Gluetun readiness probe:
+   ```bash
+   kubectl describe pod -n jellyfin -l app.kubernetes.io/name=jellyfin
+   ```
+
+Common issues:
+- Incorrect WIREGUARD_PRIVATE_KEY
+- ProtonVPN subscription not active
+- Server selection issues (try different SERVER_COUNTRIES)
+- DNS resolution problems (check DNS_KEEP_NAMESERVER is "on")
+
+### Jellyfin Web UI Not Accessible Through VPN
+
+If you cannot access jellyfin.casa.local:
+
+1. Check HTTPRoute is properly configured:
+   ```bash
+   kubectl get httproute -n jellyfin
+   kubectl describe httproute jellyfin-httproute -n jellyfin
+   ```
+
+2. Verify Gateway is accessible:
+   ```bash
+   kubectl get gateway -n traefik
+   kubectl describe gateway traefik-gateway -n traefik
+   ```
+
+3. Check that FIREWALL_INPUT_PORTS is set correctly in gluetun-config:
+   ```bash
+   kubectl get configmap gluetun-config -n jellyfin -o yaml
+   ```
+
+4. Verify Gluetun firewall allows port 8096:
+   ```bash
+   kubectl logs -n jellyfin deployment/jellyfin -c gluetun | grep -i firewall
+   ```
+
+5. Test connectivity from Traefik to Jellyfin:
+   ```bash
+   kubectl exec -n traefik deployment/traefik -- curl -s http://jellyfin.jellyfin.svc.cluster.local:8096/health
+   ```
 
 Check Gateway and HTTPRoute resources are properly configured:
 

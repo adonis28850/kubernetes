@@ -60,7 +60,7 @@ podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
-  runAsNonRoot: true
+  runAsNonRoot: false
 
 containerSecurityContext:
   allowPrivilegeEscalation: false
@@ -81,24 +81,26 @@ hardwareAcceleration:
     - /dev/dri/renderD128
     - /dev/dri/card0
 
-# Health check probes configuration
-probes:
-  liveness:
-    httpGet:
-      path: /health
-      port: http
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-  readiness:
-    httpGet:
-      path: /health
-      port: http
-    initialDelaySeconds: 10
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
+# Startup probe checks if Gluetun VPN is ready before allowing Jellyfin to start
+#
+# TEMPORARY WORKAROUND: This probe attempts to delay Jellyfin readiness until Gluetun
+# healthcheck endpoint responds, but it's not a complete solution because:
+# 1. Jellyfin still starts immediately alongside Gluetun
+# 2. Traffic could potentially leak before VPN is fully established
+# 3. The proper solution uses native sidecars (extraInitContainers) to block startup
+#
+# When official chart v3.0.0 is released, this should be removed in favor of using
+# extraInitContainers with restartPolicy: Always, which truly blocks Jellyfin from
+# starting until Gluetun is healthy.
+startupProbe:
+  httpGet:
+    path: /
+    port: 9999
+    host: 127.0.0.1
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30  # Give up to 2.5 minutes for VPN connection
 
 # Storage configuration (using official chart's persistence values)
 persistence:
@@ -162,7 +164,66 @@ tolerations: []
 # Affinity
 affinity: {}
 
+# VPN sidecar: Gluetun VPN client
+# Routes all Jellyfin outbound traffic through ProtonVPN
+#
+# TEMPORARY WORKAROUND: Using extraContainers because official Helm chart v2.7.0
+# doesn't support extraInitContainers with restartPolicy: Always for native sidecars.
+#
+# PROPER SOLUTION (when chart v3.0.0 is released): Use extraInitContainers with
+# restartPolicy: Always to implement native Kubernetes sidecars that block Jellyfin
+# startup until VPN is healthy. See: https://github.com/jellyfin/jellyfin-helm
+#
+# CURRENT LIMITATIONS:
+# - Jellyfin starts alongside Gluetun (not blocked by VPN readiness)
+# - Jellyfin uses startupProbe to check Gluetun health, but this doesn't fully
+#   prevent traffic from leaking before VPN is ready
+# - The proper sidecar pattern will ensure no traffic flows until VPN is confirmed
+extraContainers:
+  - name: gluetun
+    image: "ghcr.io/qdm12/gluetun:v3.41.0" # {"$imagepolicy": "flux-system:gluetun-policy:tag"}
+    imagePullPolicy: IfNotPresent
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN
+      privileged: false
+      runAsUser: 0
+      runAsGroup: 0
+    envFrom:
+      # Non-sensitive configuration from ConfigMap
+      - configMapRef:
+          name: gluetun-config
+      # Sensitive credentials from Secret
+      - secretRef:
+          name: gluetun-vpn-credentials
+    # Readiness probe checks if VPN interface (tun0) is up and has an IP address
+    # This is more reliable for ProtonVPN than checking healthcheck endpoint
+    readinessProbe:
+      exec:
+        command:
+          - sh
+          - -c
+          - "ip addr show tun0 2>/dev/null | grep -q 'inet '"
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 5
+    # Liveness probe ensures Gluetun remains healthy
+    # Note: failureThreshold is set high to allow Gluetun's internal VPN recovery to work
+    livenessProbe:
+      exec:
+        command:
+          - sh
+          - -c
+          - "ip addr show tun0 2>/dev/null | grep -q 'inet '"
+      initialDelaySeconds: 60
+      periodSeconds: 60
+      timeoutSeconds: 10
+      failureThreshold: 2  # Allow up to 2 minutes for VPN recovery
+
 # Additional environment variables
+# Note: HTTP_PROXY/HTTPS_PROXY are NOT needed as Gluetun handles routing automatically
 extraEnv: []
   # - name: JELLYFIN_PublishedServerUrl
   #   value: https://jellyfin.casa.local

@@ -1,0 +1,12 @@
+# Gluetun Image Repository
+# Monitors the Gluetun VPN client Docker image for new tags.
+# Flux scans this repository every hour to detect new versions.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: gluetun
+  namespace: flux-system
+spec:
+  image: ghcr.io/qdm12/gluetun
+  interval: 1h
