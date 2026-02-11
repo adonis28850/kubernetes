@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   image: syncthing/syncthing
-  interval: 1h
+  interval: 12h

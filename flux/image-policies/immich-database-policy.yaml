@@ -1,0 +1,18 @@
+# Immich Database Image Policy
+# Defines which versions of Immich PostgreSQL to track.
+# Uses alphabetical sort since tags don't follow semver format.
+#
+# IMPORTANT: The ImageRepository uses exclusionList to filter to only PostgreSQL 17
+# tags (starting with "17-vectorchord"). This policy will only consider those filtered tags.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: immich-database-policy
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: immich-database
+  policy:
+    alphabetical:
+      order: desc

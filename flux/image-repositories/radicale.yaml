@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   image: tomsquest/docker-radicale
-  interval: 1h
+  interval: 12h

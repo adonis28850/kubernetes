@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/immich-app/immich-machine-learning
-  interval: 1h
+  interval: 12h

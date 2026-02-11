@@ -9,4 +9,4 @@ metadata:
   namespace: flux-system
 spec:
   image: jellyfin/jellyfin
-  interval: 1h
+  interval: 12h

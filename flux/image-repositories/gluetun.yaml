@@ -9,4 +9,4 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/qdm12/gluetun
-  interval: 1h
+  interval: 12h

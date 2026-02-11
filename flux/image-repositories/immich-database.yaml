@@ -1,0 +1,25 @@
+# Immich Database Image Repository
+# Monitors the Immich PostgreSQL database image for new tags.
+# Flux scans this repository every hour to detect new versions.
+#
+# IMPORTANT: The exclusionList regex excludes all tags starting with PostgreSQL
+# versions other than 17. This ensures only PostgreSQL 17 tags are tracked.
+#
+# Note: This works by excluding tags that start with specific version numbers.
+
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: immich-database
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/postgres
+  interval: 12h
+  # Exclude all tags that start with PostgreSQL versions other than 17
+  exclusionList:
+    - "^14-.*"
+    - "^15-.*"
+    - "^16-.*"
+    - "^18-.*"
+    - "^19-.*"
+    - "^20-.*"
