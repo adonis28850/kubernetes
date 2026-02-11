@@ -3,7 +3,8 @@
 # Uses alphabetical sort since tags don't follow semver format.
 #
 # IMPORTANT: The ImageRepository uses exclusionList to filter to only PostgreSQL 17
-# tags (starting with "17-vectorchord"). This policy will only consider those filtered tags.
+# tags (starting with "17-vectorchord"). This policy uses ascending order to select
+# the correct latest version.
 
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
@@ -15,4 +16,4 @@ spec:
     name: immich-database
   policy:
     alphabetical:
-      order: desc
+      order: asc
