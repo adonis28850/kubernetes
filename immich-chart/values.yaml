@@ -23,7 +23,7 @@ immich:
 database:
   image:
     repository: ghcr.io/immich-app/postgres
-    tag: 17-vectorchord0.5.3 # {"$imagepolicy": "flux-system:immich-database-policy:tag"}
+    tag: 17-vectorchord0.5.3-pgvector0.8.1 # {"$imagepolicy": "flux-system:immich-database-policy:tag"}
   auth:
     database: immich
     user: postgres
