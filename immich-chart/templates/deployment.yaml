@@ -212,6 +212,12 @@ spec:
           env:
             - name: IMMICH_METRICS
               value: "false"
+            # Configure Hugging Face to use /cache for model downloads
+            - name: HF_HOME
+              value: /cache/huggingface
+            # Configure Matplotlib to use /tmp for configuration
+            - name: MPLCONFIGDIR
+              value: /tmp/matplotlib
           volumeMounts:
             - name: model-cache
               mountPath: /cache
