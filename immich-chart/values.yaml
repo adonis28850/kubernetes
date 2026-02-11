@@ -23,7 +23,7 @@ immich:
 database:
   image:
     repository: ghcr.io/immich-app/postgres
-    tag: 14-vectorchord0.4.3-pgvectors0.2.0
+    tag: 17-vectorchord0.5.3
   auth:
     database: immich
     user: postgres
@@ -32,7 +32,7 @@ database:
 valkey:
   image:
     repository: valkey/valkey
-    tag: 8-alpine
+    tag: 9.0.2
 service:
   type: ClusterIP
 # Health check probes
