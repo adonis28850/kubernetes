@@ -32,7 +32,7 @@ database:
 valkey:
   image:
     repository: valkey/valkey
-    tag: 9.0.2 # {"$imagepolicy": "flux-system:valkey-policy:tag"}
+    tag: 9.0.3 # {"$imagepolicy": "flux-system:valkey-policy:tag"}
 service:
   type: ClusterIP
 # Health check probes
