@@ -1,0 +1,20 @@
+# Weather Station Core Service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-core" .Release.Name) }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: weather-station-core
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: weather-station-core
+    app.kubernetes.io/instance: {{ .Release.Name }}

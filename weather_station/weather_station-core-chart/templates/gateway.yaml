@@ -1,0 +1,22 @@
+# Weather Station Core Gateway API Reference
+
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-core" .Release.Name) }}
+  namespace: {{ .Values.namespace }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName }}
+  listeners:
+    - name: http
+      protocol: HTTPS
+      port: 443
+      hostname: {{ .Values.gateway.hostname }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.gateway.certificateName }}
+            namespace: {{ .Values.gateway.namespace }}

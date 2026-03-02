@@ -1,0 +1,6 @@
+apiVersion: v2
+name: weather-station-ingestor
+description: A Helm chart for Weather Station Ingestor - RF signal capture service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

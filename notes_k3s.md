@@ -241,5 +241,115 @@
     Check image policies
     # kubectl get imagepolicy -n flux-system
 
+## Install Weather Station via Helm:
+
+     The Weather Station consists of three components:
+     - Core: REST API and dashboard (accessible at weather.casa.local)
+     - Ingestor: Captures RF signals from RTL-SDR dongle
+     - PostgreSQL: Database for weather data
+
+     Prerequisites:
+     1. Install Ko for building Go containers
+        https://ko.build/install/#install-from-github-releases
+
+     Build images (they'll be available to k3s as docker.io/k3s/core and docker.io/k3s/ingestor):
+     # cd /home/antonio/weather_station/core
+     # KO_DOCKER_REPO=k3s ko build --tarball=/tmp/core.tar --sbom=none ./
+     # sudo k3s ctr images import /tmp/core.tar
+
+     # cd /home/antonio/weather_station/ingestor
+     # KO_DEFAULTBASEIMAGE=hertzg/rtl_433:latest KO_DOCKER_REPO=k3s ko build --tarball=/tmp/ingestor.tar --sbom=none --disable-optimizations ./
+     # sudo k3s ctr images import /tmp/ingestor.tar
+
+     Note: The Core application embeds static files (dashboard) using Go's embed package, so no special configuration is needed.
+
+     Note: The namespace is created by the PostgreSQL chart. If you encounter namespace ownership errors
+     when deploying additional charts, clear the Helm ownership metadata:
+     # kubectl annotate namespace weather-station meta.helm.sh/release-name- meta.helm.sh/release-namespace- --overwrite
+     # kubectl label namespace weather-station app.kubernetes.io/managed-by- --overwrite
+
+     Ensure the defined folders for the local PV exist and have the right permissions as per the Helm Chart.
+
+     Create the directories
+     # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/postgres/
+
+     Set ownership to UID 1001 and GID 1001 (matching PostgreSQL securityContext)
+     # chown -R 1001:1001 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/
+
+     Set appropriate permissions (Owner: read/write/execute, Group: read/execute)
+     # chmod -R 755 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/
+
+     Create Kubernetes Secret for PostgreSQL credentials (replace with strong passwords):
+     # kubectl create namespace weather-station
+     # kubectl create secret generic weather-station-postgres-auth \
+       --from-literal=postgres-password=<strong-postgres-admin-password> \
+       --from-literal=password=<strong-user-password> \
+       --from-literal=username=weather_user \
+       --namespace weather-station
+
+     Deploy PostgreSQL (dependencies must be built first):
+     # cd /home/antonio/kubernetes/weather_station/weather_station-postgres-chart
+     # helm dependency build
+     # helm install weather-station-postgres ./weather_station-postgres-chart --namespace weather-station
+
+     Wait for PostgreSQL to be ready:
+     # kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql -n weather-station --timeout=300s
+
+     Deploy Core service:
+     # helm install weather-station-core ./weather_station-core-chart --namespace weather-station
+
+     Deploy Ingestor service:
+     # helm install weather-station-ingestor ./weather_station-ingestor-chart --namespace weather-station
+
+     Verify the installation:
+     # kubectl get pods -n weather-station
+     # kubectl get svc -n weather-station
+     # kubectl get gateway -n weather-station
+     # kubectl get httproute -n weather-station
+
+     Access the dashboard:
+     Open https://weather.casa.local in your browser
+
+     Check logs:
+     # kubectl logs -n weather-station deployment/weather-station-core
+     # kubectl logs -n weather-station deployment/weather-station-ingestor
+
+     Check RTL-SDR device is accessible:
+     # kubectl exec -n weather-station deployment/weather-station-ingestor -- ls -la /dev/bus/usb/
+
+     Troubleshooting:
+     - If ingestor can't access USB device, check device permissions:
+       # ls -la /dev/bus/usb/
+       # kubectl describe pod -n weather-station -l app.kubernetes.io/name=weather-station-ingestor
+
+     - If dashboard is not accessible, check Gateway and HTTPRoute:
+       # kubectl get gateway -n weather-station
+       # kubectl get httproute -n weather-station
+       # kubectl logs -n traefik deployment/traefik | grep weather
+
+     - If database connection fails, check PostgreSQL is running:
+       # kubectl get pods -n weather-station -l app.kubernetes.io/name=postgresql
+       # kubectl logs -n weather-station -l app.kubernetes.io/name=postgresql
+
+     Uninstall (if needed):
+     # helm uninstall weather-station-ingestor -n weather-station
+     # helm uninstall weather-station-core -n weather-station
+     # helm uninstall weather-station-postgres -n weather-station
+     # kubectl delete namespace weather-station
+
+     Note: If you need to redeploy after uninstalling, the namespace will be recreated by the PostgreSQL chart.
+     If you encounter namespace ownership errors when deploying additional charts, clear the Helm ownership metadata:
+     # kubectl annotate namespace weather-station meta.helm.sh/release-name- meta.helm.sh/release-namespace- --overwrite
+     # kubectl label namespace weather-station app.kubernetes.io/managed-by- --overwrite
+
+     Access the dashboard:
+     The weather station dashboard is available at https://weather.casa.local/
+     API endpoints:
+     - /health - Health check
+     - /api/ingest - Ingest weather data
+     - /api/weather/current - Current weather
+     - /api/weather/recent - Recent readings
+     - /api/weather/history - Historical data
+     - /api/weather/years - Available years
 
 

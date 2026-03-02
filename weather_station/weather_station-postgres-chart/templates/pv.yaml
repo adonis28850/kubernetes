@@ -1,0 +1,24 @@
+# Persistent Volume for PostgreSQL
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-pv
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.persistence.size }}
+  accessModes:
+    - {{ .Values.persistence.accessMode | default "ReadWriteOnce" }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.persistence.storageClass }}
+  local:
+    path: {{ .Values.persistence.hostPath }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - {{ .Values.node.name }}

@@ -1,0 +1,97 @@
+# Weather Station Core Helm Chart Values
+
+replicaCount: 1
+
+image:
+  repository: docker.io/k3s/core-ba3dd2ec7444ce003d00810ff6b912d3
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account configuration
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+
+# Pod-level security context
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+
+# Gateway API Configuration
+gateway:
+  name: traefik-gateway
+  namespace: traefik
+  gatewayClassName: traefik
+  certificateName: local-selfsigned-tls
+  hostname: weather.casa.local
+
+# Environment variables
+env:
+  # Database configuration
+  WEATHER_DB_HOST: weather-station-postgres-postgresql
+  WEATHER_DB_PORT: "5432"
+  WEATHER_DB_NAME: weather_station
+  WEATHER_DB_USER: weather_user
+  # Server configuration
+  WEATHER_SERVER_PORT: "8080"
+  # Worker pool configuration
+  WEATHER_INGESTION_CHAN_SIZE: "1000"
+  WEATHER_JOB_QUEUE_SIZE: "100"
+  WEATHER_WORKER_COUNT: "5"
+  WEATHER_RESULT_QUEUE_SIZE: "100"
+  # Aggregation and retention
+  WEATHER_AGGREGATION_SCHEDULE: "0 0 * * *"
+  WEATHER_RETENTION_DAYS: "30"
+  # Astronomical configuration
+  WEATHER_LATITUDE: "41.8262"
+  WEATHER_LONGITUDE: "-87.6841"
+  WEATHER_TIMEZONE: "UTC"
+  # Database connection pool
+  WEATHER_DB_MAX_OPEN_CONNS: "25"
+  WEATHER_DB_MAX_IDLE_CONNS: "5"
+  WEATHER_DB_CONN_MAX_LIFETIME_SECONDS: "300"
+  WEATHER_DB_MAX_RETRIES: "5"
+  WEATHER_DB_RETRY_INTERVAL_SECONDS: "5"
+  # HTTP logging
+  WEATHER_ENABLE_HTTP_LOGGING: "true"
+
+# Health check probes
+probes:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Node configuration
+node:
+  name: k3s-cluster
+
+# Namespace
+namespace: weather-station

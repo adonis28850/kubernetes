@@ -1,0 +1,70 @@
+# Weather Station Ingestor Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-ingestor" .Release.Name) }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: weather-station-ingestor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: weather-station-ingestor
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: weather-station-ingestor
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.node.name }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ingestor
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: usb
+              mountPath: /dev/bus/usb
+            - name: tmp
+              mountPath: /tmp
+          # Ingestor doesn't have HTTP health checks, so we use exec probes
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pgrep -f ingestor
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pgrep -f ingestor
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+      volumes:
+        - name: usb
+          hostPath:
+            path: {{ .Values.usb.hostPath }}
+            type: DirectoryOrCreate
+        - name: tmp
+          emptyDir: {}

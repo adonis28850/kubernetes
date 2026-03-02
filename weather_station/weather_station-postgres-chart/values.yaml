@@ -1,0 +1,255 @@
+# Weather Station PostgreSQL Helm Chart Values
+# This is a wrapper for the Bitnami PostgreSQL chart
+
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Node configuration
+node:
+  name: k3s-cluster
+
+# Namespace
+namespace: weather-station
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 5Gi
+  # Host path on the node where data is stored
+  hostPath: /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/postgres/
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: weather_user
+    password: ""
+    database: weather_station
+    # PostgreSQL password for the 'postgres' administrative user
+    postgresPassword: ""
+    # Reference to existing Kubernetes Secret containing credentials
+    existingSecret: weather-station-postgres-auth
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: weather-station-postgres-postgres-pvc
+    # Node selector for the primary pod
+    nodeSelector:
+      kubernetes.io/hostname: k3s-cluster
+    # Pod security context
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+    # Service configuration
+    service:
+      ports:
+        postgresql: 5432
+    # Resources
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    # Init scripts
+    initdb:
+      scripts:
+        # These scripts will be executed on first database initialization
+        001-init-schema.sql: |
+          -- Migration 001: Initialize database schema
+          -- This migration creates the main tables for storing weather data
+
+          -- Create the raw readings table
+          -- This table stores every 5-second reading from the weather sensor
+          -- Data is retained for 30 days, then deleted by the retention function
+          CREATE TABLE IF NOT EXISTS readings (
+              -- Primary key: auto-incrementing unique identifier
+              id BIGSERIAL PRIMARY KEY,
+
+              -- Sensor identifier (allows multiple sensors in the future)
+              sensor_id INTEGER NOT NULL,
+
+              -- Timestamp when the reading was captured (with timezone)
+              timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+
+              -- Temperature in Celsius (e.g., 22.5)
+              temperature_c REAL NOT NULL,
+
+              -- Humidity percentage (0-100)
+              humidity INTEGER NOT NULL,
+
+              -- UV Index (0-12, optional field) - matches rtl_433 JSON field 'uv'
+              uv REAL,
+
+              -- Light intensity in lux (optional field) - matches rtl_433 JSON field 'light_lux'
+              light_lux INTEGER,
+
+              -- Wind speed in meters per second
+              wind_speed_m_s REAL NOT NULL,
+
+              -- Wind gust speed in meters per second (peak wind speed)
+              wind_gust_m_s REAL NOT NULL,
+
+              -- Wind direction in degrees (0-360, where 0=N, 90=E, 180=S, 270=W)
+              wind_dir_deg INTEGER NOT NULL,
+
+              -- Rainfall in millimeters (cumulative or per reading)
+              rain_mm REAL NOT NULL,
+
+              -- Battery status: "ok" or "low" - matches rtl_433 JSON field 'battery'
+              battery TEXT NOT NULL,
+
+              -- Sensor model (e.g., "Fineoffset-WS90") - matches rtl_433 JSON field 'model'
+              model TEXT
+          );
+
+          -- Create index on timestamp for time-series queries
+          -- DESC order makes queries for recent data faster
+          CREATE INDEX IF NOT EXISTS idx_readings_timestamp ON readings(timestamp DESC);
+
+          -- Create composite index on sensor_id and timestamp
+          -- Optimizes queries for specific sensors over time ranges
+          CREATE INDEX IF NOT EXISTS idx_readings_sensor_timestamp ON readings(sensor_id, timestamp DESC);
+
+          -- Create the daily rollups table
+          -- This table stores aggregated data for each day (permanent storage)
+          -- One row per day with summary statistics
+          CREATE TABLE IF NOT EXISTS daily_weather (
+              -- The date this rollup represents (primary key)
+              day_date DATE PRIMARY KEY,
+
+              -- Highest temperature recorded during the day
+              temp_high_c REAL NOT NULL,
+
+              -- Lowest temperature recorded during the day
+              temp_low_c REAL NOT NULL,
+
+              -- Highest humidity percentage during the day
+              humidity_high INTEGER NOT NULL,
+
+              -- Lowest humidity percentage during the day
+              humidity_low INTEGER NOT NULL,
+
+              -- Total rainfall in millimeters for the day
+              rain_mm REAL NOT NULL,
+
+              -- Maximum wind gust speed recorded during the day
+              wind_max_gust_m_s REAL NOT NULL,
+
+              -- Average wind speed for the day (mean of all readings)
+              wind_mean_m_s REAL NOT NULL,
+
+              -- Number of wind speed readings used to calculate the mean
+              wind_sample_count INTEGER NOT NULL,
+
+              -- Total number of raw readings for this day
+              readings_count INTEGER NOT NULL,
+
+              -- Timestamp of the first reading of the day
+              first_reading_ts TIMESTAMP WITH TIME ZONE NOT NULL,
+
+              -- Timestamp of the last reading of the day
+              last_reading_ts TIMESTAMP WITH TIME ZONE NOT NULL,
+
+              -- Maximum UV index recorded during the day
+              uv_max REAL,
+
+              -- Maximum light level in lux recorded during the day
+              light_max INTEGER
+          );
+
+          -- Create index on date for historical queries
+          -- DESC order makes queries for recent days faster
+          CREATE INDEX IF NOT EXISTS idx_daily_weather_date ON daily_weather(day_date DESC);
+        002-create-retention-function.sql: |
+          -- Migration 002: Create retention function
+          -- This function deletes raw readings older than the retention period
+          -- It's called by the Go application's retention cleaner goroutine
+
+          CREATE OR REPLACE FUNCTION delete_old_readings()
+          RETURNS void AS $$
+          BEGIN
+              DELETE FROM readings
+              WHERE timestamp < NOW() - INTERVAL '30 days';
+          END;
+          $$ LANGUAGE plpgsql;
+
+          -- Note: This function is called by the Go application's retention cleaner goroutine
+        003-create-daily-aggregation-function.sql: |
+          -- Migration 003: Create daily aggregation function
+          -- This function aggregates all readings for a specific date into a single daily rollup
+          -- It's called by the Go application's daily aggregator goroutine at midnight
+          CREATE OR REPLACE FUNCTION compute_daily_rollup(target_date DATE)
+          RETURNS void AS $$
+          DECLARE
+              -- Variables to store aggregated values
+              v_temp_high REAL;
+              v_temp_low REAL;
+              v_humidity_high INTEGER;
+              v_humidity_low INTEGER;
+              v_rain_mm REAL;
+              v_wind_max_gust REAL;
+              v_wind_mean REAL;
+              v_wind_count INTEGER;
+              v_readings_count INTEGER;
+              v_first_ts TIMESTAMP WITH TIME ZONE;
+              v_last_ts TIMESTAMP WITH TIME ZONE;
+              v_uv_max REAL;
+              v_light_max INTEGER;
+          BEGIN
+              -- Calculate statistics for the target date
+              -- DATE(timestamp) = target_date filters readings for that specific day
+              SELECT
+                  MAX(temperature_c),           -- Highest temperature
+                  MIN(temperature_c),           -- Lowest temperature
+                  MAX(humidity),                -- Highest humidity
+                  MIN(humidity),                -- Lowest humidity
+                  COALESCE(SUM(rain_mm), 0),    -- Total rain (0 if no rain)
+                  MAX(wind_gust_m_s),           -- Maximum wind gust
+                  AVG(wind_speed_m_s),          -- Average wind speed
+                  COUNT(wind_speed_m_s),        -- Count of wind readings
+                  COUNT(*),                     -- Total readings count
+                  MIN(timestamp),               -- First reading timestamp
+                  MAX(timestamp),               -- Last reading timestamp
+                  MAX(uv),                      -- Maximum UV index
+                  MAX(light_lux)                -- Maximum light level
+              INTO
+                  v_temp_high, v_temp_low, v_humidity_high, v_humidity_low,
+                  v_rain_mm, v_wind_max_gust, v_wind_mean, v_wind_count,
+                  v_readings_count, v_first_ts, v_last_ts, v_uv_max, v_light_max
+              FROM readings
+              WHERE DATE(timestamp) = target_date;
+
+              -- Only insert if we have readings for this date
+              -- This prevents NULL constraint violations when there's no data
+              IF v_readings_count > 0 THEN
+                  -- Insert the aggregated data into the daily_weather table
+                  -- ON CONFLICT DO NOTHING prevents duplicate rollups for the same date
+                  INSERT INTO daily_weather (
+                      day_date, temp_high_c, temp_low_c, humidity_high, humidity_low,
+                      rain_mm, wind_max_gust_m_s, wind_mean_m_s, wind_sample_count,
+                      readings_count, first_reading_ts, last_reading_ts, uv_max, light_max
+                  ) VALUES (
+                      target_date, v_temp_high, v_temp_low, v_humidity_high, v_humidity_low,
+                      v_rain_mm, v_wind_max_gust, v_wind_mean, v_wind_count,
+                      v_readings_count, v_first_ts, v_last_ts, v_uv_max, v_light_max
+                  )
+                  ON CONFLICT (day_date) DO UPDATE SET
+                      uv_max = EXCLUDED.uv_max,
+                      light_max = EXCLUDED.light_max;
+              END IF;
+          END;
+          $$ LANGUAGE plpgsql;
+
+          -- Note: This function is called by the Go application's daily aggregator goroutine
+  # Network policies
+  networkPolicy:
+    enabled: true
+    allowExternal: false

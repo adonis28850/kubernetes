@@ -1,0 +1,61 @@
+# Weather Station Core NetworkPolicy
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-core" .Release.Name) }}-networkpolicy
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: weather-station-core
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: weather-station-core
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Allow ingress from Traefik (for external access)
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: weather-station
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: weather-station-ingestor
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+  # Allow egress to PostgreSQL and DNS
+  egress:
+    # DNS access
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: weather-station
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432

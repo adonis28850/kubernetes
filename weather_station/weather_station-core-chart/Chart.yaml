@@ -1,0 +1,6 @@
+apiVersion: v2
+name: weather-station-core
+description: A Helm chart for Weather Station Core - API and Dashboard service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

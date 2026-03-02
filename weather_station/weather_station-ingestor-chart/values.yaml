@@ -1,0 +1,77 @@
+# Weather Station Ingestor Helm Chart Values
+
+replicaCount: 1
+
+image:
+  repository: docker.io/k3s/ingestor-139c55cb85093f9a05730019d5ab98a3
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account configuration
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+
+# Pod-level security context
+# Note: Ingestor needs USB device access, so we run as root for device permissions
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 0
+  supplementalGroups:
+    - 46  # USB device group
+
+# Container-level security context
+# Note: Allow privilege escalation for USB device access
+containerSecurityContext:
+  privileged: true
+  allowPrivilegeEscalation: true
+  capabilities:
+    add:
+      - SYS_RAWIO  # Required for USB device access
+      - SYS_ADMIN  # Required for USB device access
+    drop:
+      - ALL
+
+# Environment variables
+env:
+  # Core API configuration
+  CORE_API_URL: http://weather-station-core-core.weather-station.svc.cluster.local:8080/api/ingest
+  CORE_API_TIMEOUT_SECONDS: "10"
+  CORE_API_MAX_RETRIES: "5"
+  CORE_API_BACKOFF_DURATION: "2"
+  # Worker pool configuration
+  CORE_API_WORKER_COUNT: "5"
+  CORE_API_JOB_QUEUE_SIZE: "100"
+  CORE_API_RESULT_QUEUE_SIZE: "100"
+  # RTL-433 command
+  RTL_433_COMMAND: "rtl_433 -f 868.3M -s 1024k -R 244 -F json -M utc"
+
+# Health check probes
+probes:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Node configuration
+node:
+  name: k3s-cluster
+
+# USB device configuration
+usb:
+  # Mount the entire /dev/bus/usb directory for RTL-SDR access
+  hostPath: /dev/bus/usb
+
+# Namespace
+namespace: weather-station
