@@ -1,0 +1,17 @@
+{{- if .Values.backupPersistence.enabled }}
+# Persistent Volume Claim for PostgreSQL Backups
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-backup-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode | default "ReadWriteOnce" }}
+  storageClassName: {{ .Values.backupPersistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.backupPersistence.size }}
+  volumeName: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-backup-pv
+{{- end }}

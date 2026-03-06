@@ -1,0 +1,97 @@
+{{- if .Values.backup.enabled }}
+# PostgreSQL Backup CronJob
+# Runs by default daily at 2 AM to backup the weather_station database
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-backup
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  schedule: "{{ .Values.backup.schedule | default "0 2 * * *" }}"  # Daily at 2 AM
+  concurrencyPolicy: Forbid  # Don't run if previous job is still running
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit | default 7 }}
+  failedJobsHistoryLimit: {{ .Values.backup.failedJobsHistoryLimit | default 3 }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backup.backoffLimit | default 3 }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-backup
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: OnFailure
+          {{- if .Values.node.name }}
+          nodeSelector:
+            kubernetes.io/hostname: {{ .Values.node.name }}
+          {{- end }}
+          securityContext:
+            runAsUser: {{ .Values.backup.securityContext.runAsUser | default 1001 }}
+            runAsGroup: {{ .Values.backup.securityContext.runAsGroup | default 1001 }}
+            fsGroup: {{ .Values.backup.securityContext.fsGroup | default 1001 }}
+          containers:
+          - name: backup
+            image: {{ .Values.backup.image.repository | default "bitnami/postgresql" }}:{{ .Values.backup.image.tag | default "18.3.0" }}
+            imagePullPolicy: {{ .Values.backup.image.pullPolicy | default "IfNotPresent" }}
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              
+              # Get database credentials from secret
+              export PGPASSWORD=$(cat /etc/postgres/secret/password)
+              export PGUSER=$(cat /etc/postgres/secret/username)
+              export PGHOST={{ .Values.fullnameOverride | default .Release.Name }}-postgresql
+              export PGPORT=5432
+              export PGDATABASE={{ .Values.postgresql.auth.database }}
+              
+              # Create backup filename with timestamp
+              BACKUP_FILE="/backups/postgres-backup-$(date +%Y%m%d-%H%M%S).sql"
+              
+              echo "Starting backup at $(date)"
+              echo "Backup file: $BACKUP_FILE"
+              
+              # Run pg_dump
+              pg_dump -Fc -f "$BACKUP_FILE"
+              
+              echo "Backup completed successfully at $(date)"
+              
+              # Get file size
+              BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+              echo "Backup size: $BACKUP_SIZE"
+              
+              # Clean up old backups (keep last {{ .Values.backup.retentionDays | default 30 }} days)
+              find /backups -name "postgres-backup-*.sql" -mtime +{{ .Values.backup.retentionDays | default 30 }} -delete
+              
+              echo "Old backups cleaned up"
+            env:
+            - name: TZ
+              value: {{ .Values.backup.timezone | default "UTC" }}
+            volumeMounts:
+            - name: postgres-secret
+              mountPath: /etc/postgres/secret
+              readOnly: true
+            - name: backups
+              mountPath: /backups
+            resources:
+              {{- toYaml .Values.backup.resources | nindent 14 }}
+          volumes:
+          - name: postgres-secret
+            secret:
+              secretName: {{ .Values.postgresql.auth.existingSecret }}
+              items:
+              - key: password
+                path: password
+              - key: username
+                path: username
+          - name: backups
+            persistentVolumeClaim:
+              claimName: {{ .Values.fullnameOverride | default (printf "%s-postgres" .Release.Name) }}-backup-pvc
+              type: DirectoryOrCreate
+{{- end }}

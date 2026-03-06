@@ -272,6 +272,7 @@
 
      Create the directories
      # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/postgres/
+     # mkdir -p /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/postgres-backups/
 
      Set ownership to UID 1001 and GID 1001 (matching PostgreSQL securityContext)
      # chown -R 1001:1001 /srv/dev-disk-by-uuid-2a3b438e-c3d9-4623-80b5-2a887dae15fe/WeatherStation/
