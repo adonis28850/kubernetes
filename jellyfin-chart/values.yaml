@@ -7,20 +7,16 @@ image:
   repository: jellyfin/jellyfin
   pullPolicy: IfNotPresent
   # Flux image automation marker - Flux will update this tag when new versions are released
-  tag: "10.11.6" # {"$imagepolicy": "flux-system:jellyfin-policy:tag"}
-
+  tag: "10.11.7" # {"$imagepolicy": "flux-system:jellyfin-policy:tag"}
 # Replica configuration
 replicaCount: 1
-
 # Service configuration
 service:
   type: ClusterIP
   port: 8096
-
 # Ingress configuration (disabled - using Gateway API instead)
 ingress:
   enabled: false
-
 # HTTPRoute configuration for Gateway API
 httpRoute:
   enabled: true
@@ -39,29 +35,24 @@ httpRoute:
         - path:
             type: PathPrefix
             value: /
-
 # Gateway API configuration (for reference only, httpRoute handles this)
 gateway:
   name: traefik-gateway
   namespace: traefik
   gatewayClassName: traefik
   certificateName: local-selfsigned-tls
-
 # HTTPRoute configuration
 httproute:
   hostname: jellyfin.casa.local
-
 # Node configuration for static PV binding
 node:
   name: k3s-cluster
-
 # Security context
 podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
   runAsNonRoot: false
-
 containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
@@ -69,7 +60,6 @@ containerSecurityContext:
       - ALL
   # Set to false for Jellyfin to allow writes to cache and transcoding files
   readOnlyRootFilesystem: false
-
 # Hardware acceleration configuration
 # Intel QuickSync on Intel N100 (Alder Lake-N) CPU
 # This enables hardware transcoding for better performance
@@ -80,7 +70,6 @@ hardwareAcceleration:
   devices:
     - /dev/dri/renderD128
     - /dev/dri/card0
-
 # Startup probe checks if Gluetun VPN is ready before allowing Jellyfin to start
 #
 # TEMPORARY WORKAROUND: This probe attempts to delay Jellyfin readiness until Gluetun
@@ -100,8 +89,7 @@ startupProbe:
   initialDelaySeconds: 5
   periodSeconds: 5
   timeoutSeconds: 3
-  failureThreshold: 30  # Give up to 2.5 minutes for VPN connection
-
+  failureThreshold: 30 # Give up to 2.5 minutes for VPN connection
 # Storage configuration (using official chart's persistence values)
 persistence:
   enabled: true
@@ -116,18 +104,15 @@ persistence:
     type: pvc
     # Use existing static PVC instead of creating a new one
     existingClaim: jellyfin-media
-
 # Extra volumes for cache (transcoding)
 # The official chart doesn't support cache, so we add it via extra volumes
 extraVolumes:
   - name: cache
     persistentVolumeClaim:
       claimName: jellyfin-cache
-
 extraVolumeMounts:
   - name: cache
     mountPath: /cache
-
 # NetworkPolicy configuration (using official chart's values)
 networkPolicy:
   enabled: true
@@ -153,17 +138,13 @@ networkPolicy:
         - protocol: TCP
           port: 53
     - {}
-
 # Node selector - ensures pods run on the k3s-cluster node
 nodeSelector:
   kubernetes.io/hostname: k3s-cluster
-
 # Tolerations
 tolerations: []
-
 # Affinity
 affinity: {}
-
 # VPN sidecar: Gluetun VPN client
 # Routes all Jellyfin outbound traffic through ProtonVPN
 #
@@ -220,10 +201,9 @@ extraContainers:
       initialDelaySeconds: 60
       periodSeconds: 60
       timeoutSeconds: 10
-      failureThreshold: 2  # Allow up to 2 minutes for VPN recovery
-
+      failureThreshold: 2 # Allow up to 2 minutes for VPN recovery
 # Additional environment variables
 # Note: HTTP_PROXY/HTTPS_PROXY are NOT needed as Gluetun handles routing automatically
 extraEnv: []
-  # - name: JELLYFIN_PublishedServerUrl
-  #   value: https://jellyfin.casa.local
+# - name: JELLYFIN_PublishedServerUrl
+#   value: https://jellyfin.casa.local
