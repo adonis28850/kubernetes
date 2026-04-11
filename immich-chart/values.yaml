@@ -8,11 +8,11 @@ image:
 immich:
   server:
     repository: ghcr.io/immich-app/immich-server
-    tag: "v2.7.3" # {"$imagepolicy": "flux-system:immich-server-policy:tag"}
+    tag: "v2.7.4" # {"$imagepolicy": "flux-system:immich-server-policy:tag"}
     replicaCount: 1
   microservices:
     repository: ghcr.io/immich-app/immich-server
-    tag: "v2.7.3" # {"$imagepolicy": "flux-system:immich-server-policy:tag"}
+    tag: "v2.7.4" # {"$imagepolicy": "flux-system:immich-server-policy:tag"}
     replicaCount: 1
     enabled: false
   machineLearning:
