@@ -7,7 +7,7 @@ image:
   repository: jellyfin/jellyfin
   pullPolicy: IfNotPresent
   # Flux image automation marker - Flux will update this tag when new versions are released
-  tag: "10.11.8" # {"$imagepolicy": "flux-system:jellyfin-policy:tag"}
+  tag: "10.11.9" # {"$imagepolicy": "flux-system:jellyfin-policy:tag"}
 # Replica configuration
 replicaCount: 1
 # Service configuration
