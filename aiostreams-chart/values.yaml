@@ -10,7 +10,7 @@ image:
   repository: ghcr.io/viren070/aiostreams
   pullPolicy: IfNotPresent
   # Flux image automation marker - Flux will update this tag when new versions are released
-  tag: "v2.30.2" # {"$imagepolicy": "flux-system:aiostreams-policy:tag"}
+  tag: "v2.30.3" # {"$imagepolicy": "flux-system:aiostreams-policy:tag"}
 nameOverride: ""
 fullnameOverride: ""
 # Service account configuration (not used for AIOStreams)
